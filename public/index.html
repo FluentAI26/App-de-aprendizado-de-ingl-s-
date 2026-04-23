@@ -521,9 +521,19 @@ async function callAI(messages,level){
   try{
     const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages,level:level||S.level})});
     const d=await res.json();
+    if(res.status===429){
+      throw new Error(d.error||"Você estudou muito hoje! 🎓 Limite atingido. Volte em alguns instantes.");
+    }
     if(!res.ok||d.error) throw new Error(d.error||"API error");
     return d.reply;
   }catch(e){
+    const msg=e.message||"";
+    if(msg.includes("429")||msg.includes("Limite")||msg.includes("Muitas")){
+      throw new Error("⏳ Muitas requisições. Aguarde alguns segundos e tente novamente.");
+    }
+    if(msg.includes("Failed to fetch")||msg.includes("NetworkError")){
+      throw new Error("📶 Sem conexão. Verifique sua internet e tente novamente.");
+    }
     console.error("API error:",e);
     throw e;
   }
