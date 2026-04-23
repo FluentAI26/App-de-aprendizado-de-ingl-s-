@@ -571,7 +571,20 @@ function P_VOCAB_CUSTOM(word,level){
 }
 
 function P_LISTENING_GENERATE(topic,level){
-  return `You are an EFL content creator writing a listening transcript for ${level} learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nTOPIC: "${topic}"\n\nWrite a natural spoken-English passage of 80-110 words about "${topic}".\nThis will be read aloud by text-to-speech, so:\n- Use natural spoken rhythm (short sentences, natural pauses implied by punctuation)\n- Include 1-2 contractions per sentence (I'm, don't, it's, etc.)\n- Avoid written-only constructions\n- Make it sound like someone talking, not writing\n- Use real-life, relatable scenario\n- Repeat 1-2 key vocabulary items naturally\n\nWrite ONLY the passage. No title, no label, no explanation.`;
+  return `You are an EFL content creator. OUTPUT ONLY THE SPOKEN PASSAGE — no explanations, no labels, no meta-commentary, no notes about vocabulary level.
+
+Write a natural spoken-English passage of 80-110 words about "${topic}" for ${level} learners.
+
+VOCABULARY RULE: ${LV_VOCAB[level]}
+
+Requirements:
+- Natural spoken rhythm (short sentences)
+- Include contractions (I'm, don't, it's, can't)
+- Sound like someone talking, not writing
+- Real-life, relatable scenario
+- Repeat 1-2 key words naturally
+
+IMPORTANT: Output ONLY the passage text. Stop immediately after the last sentence. Do not add any explanation, note, or comment after the passage.`;
 }
 
 function P_AI_COACH_SYSTEM(level){
