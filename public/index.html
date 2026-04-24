@@ -607,7 +607,7 @@ const TABS=[
   {id:"listening",icon:"◎",label:"Listening"},{id:"speaking",icon:"◈",label:"Speaking"},
   {id:"reading",icon:"≡",label:"Reading"},{id:"vocabulary",icon:"⊟",label:"Vocabulary"},
   {id:"review",icon:"↻",label:"Review"},{id:"ai",icon:"✦",label:"AI Coach"},
-  {id:"evolucao",icon:"📈",label:"Evolucao"},
+  {id:"evolucao",icon:"📈",label:"Evolução"},
   {id:"settings",icon:"⚙",label:"Config"},
 ];
 
@@ -1567,71 +1567,96 @@ async function sendAIMessage(){
 }
 
 function renderEvolucao(){
-  var last30=[];
-  for(var i=0;i<30;i++){
-    var d=new Date(); d.setDate(d.getDate()-29+i);
-    var key=d.toDateString();
-    var modules=Object.keys(S.studyLog[key]||{}).length;
-    last30.push({modules:modules,isToday:i===29,day:d.getDate(),month:d.getMonth()+1,weekday:["Dom","Seg","Ter","Qua","Qui","Sex","Sab"][d.getDay()]});
-  }
-  var daysStudied=last30.filter(function(d){return d.modules>0;}).length;
-  var totalMods=last30.reduce(function(a,d){return a+d.modules;},0);
-  var avg=daysStudied>0?(totalMods/daysStudied).toFixed(1):0;
-  var best=0,cur=0;
-  last30.forEach(function(d){if(d.modules>0){cur++;if(cur>best)best=cur;}else cur=0;});
-  var maxM=Math.max.apply(null,last30.map(function(d){return d.modules;}));
-  if(maxM<1)maxM=1;
-  var learned=Object.values(S.vocabSRS).filter(function(v){return v.status==="learned";}).length;
-  var total=Object.keys(S.vocabSRS).length;
-  var bars=last30.map(function(d){
-    var h=d.modules===0?4:Math.max(12,Math.round((d.modules/maxM)*80));
-    var c=d.isToday?"#a78bfa":d.modules>0?"#5b21b6":"#1a1828";
-    var b=d.isToday?"2px solid #a78bfa":"none";
-    return "<div style='flex:1;height:"+h+"px;background:"+c+";border-radius:3px;border:"+b+"'></div>";
-  }).join("");
-  var stats=[
-    {v:daysStudied,l:"Dias estudados",s:"ultimos 30 dias"},
+  const last30=Array.from({length:30},(_,i)=>{
+    const d=new Date(); d.setDate(d.getDate()-29+i);
+    const key=d.toDateString();
+    const log=S.studyLog[key]||{};
+    const modules=Object.keys(log).length;
+    const isToday=i===29;
+    return {key,modules,isToday,day:d.getDate(),month:d.getMonth()+1,weekday:["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]};
+  });
+  const daysStudied=last30.filter(d=>d.modules>0).length;
+  const avgModules=daysStudied>0?(last30.reduce((a,d)=>a+d.modules,0)/daysStudied).toFixed(1):0;
+  const bestStreak=(()=>{let max=0,cur=0;last30.forEach(d=>{if(d.modules>0){cur++;max=Math.max(max,cur);}else cur=0;});return max;})();
+  const maxModules=Math.max(...last30.map(d=>d.modules),1);
+  const learned=Object.values(S.vocabSRS).filter(v=>v.status==="learned").length;
+  const totalReviewed=Object.keys(S.vocabSRS).length;
+  return `
+<div class="page-title">📈 Minha Evolução</div>
+<div class="page-sub">Acompanhe seu progresso real ao longo do tempo.</div>
+<div class="stats-grid">
+  ${[
+    {v:daysStudied,l:"Dias estudados",s:"últimos 30 dias"},
     {v:S.streak+"d",l:"Streak atual",s:"dias seguidos"},
-    {v:best+"d",l:"Melhor streak",s:"ultimos 30 dias"},
-    {v:avg,l:"Modulos/dia",s:"media dos dias ativos"},
-  ].map(function(s){
-    return "<div class='stat-card'><div class='stat-val'>"+s.v+"</div><div class='stat-label'>"+s.l+"</div><div class='stat-sub'>"+s.s+"</div></div>";
-  }).join("");
-  var vbars=[
-    {l:"Total estudado",v:total,c:"#a78bfa"},
+    {v:bestStreak+"d",l:"Melhor streak",s:"últimos 30 dias"},
+    {v:avgModules,l:"Módulos/dia",s:"média dos dias ativos"},
+  ].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
+</div>
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Atividade nos últimos 30 dias</div>
+  <div style="display:flex;align-items:flex-end;gap:3px;height:80px;margin-bottom:8px">
+    ${last30.map(d=>{
+      const h=d.modules===0?4:Math.max(12,Math.round((d.modules/maxModules)*80));
+      const color=d.isToday?"#a78bfa":d.modules>0?"#5b21b6":"#1a1828";
+      const border=d.isToday?"2px solid #a78bfa":"none";
+      return `<div style="flex:1;height:${h}px;background:${color};border-radius:3px;border:${border}" title="${d.weekday} ${d.day}/${d.month}: ${d.modules} módulo(s)"></div>`;
+    }).join("")}
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:10px;color:#555">
+    <span>${last30[0].day}/${last30[0].month}</span>
+    <span>${last30[14].day}/${last30[14].month}</span>
+    <span>hoje</span>
+  </div>
+  <div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap">
+    <span style="font-size:11px;color:#555">■ <span style="color:#5b21b6">estudou</span></span>
+    <span style="font-size:11px;color:#555">■ <span style="color:#a78bfa">hoje</span></span>
+    <span style="font-size:11px;color:#555">■ <span style="color:#1a1828">sem estudo</span></span>
+  </div>
+</div>
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Vocabulário</div>
+  ${[
+    {l:"Total estudado",v:totalReviewed,c:"#a78bfa"},
     {l:"Dominadas",v:learned,c:"#6ee7b7"},
-    {l:"Para revisar",v:total-learned,c:"#fcd34d"},
-    {l:"Minhas",v:(S.userVocab||[]).length,c:"#60a5fa"},
-  ].map(function(s){
-    var pct=total>0?Math.round((s.v/Math.max(total,1))*100):0;
-    return "<div class='perf-bar'><div class='perf-label'>"+s.l+"</div><div class='progress-wrap' style='flex:1;background:#0c0c18'><div style='height:100%;border-radius:99px;background:"+s.c+";width:"+pct+"%;transition:width .5s'></div></div><div class='perf-pct' style='color:"+s.c+";width:40px'>"+s.v+"</div></div>";
-  }).join("");
-  var mbars=[
+    {l:"Para revisar",v:totalReviewed-learned,c:"#fcd34d"},
+    {l:"Palavras minhas",v:(S.userVocab||[]).length,c:"#60a5fa"},
+  ].map(s=>`
+  <div class="perf-bar">
+    <div class="perf-label">${s.l}</div>
+    <div class="progress-wrap" style="flex:1;background:#0c0c18">
+      <div style="height:100%;border-radius:99px;background:${s.c};width:${totalReviewed>0?Math.round((s.v/Math.max(totalReviewed,1))*100):0}%;transition:width .5s"></div>
+    </div>
+    <div class="perf-pct" style="color:${s.c};width:40px">${s.v}</div>
+  </div>`).join("")}
+</div>
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Performance por módulo</div>
+  ${[
     {k:"listening",l:"Listening",c:"#8b5cf6"},
     {k:"speaking",l:"Speaking",c:"#f59e0b"},
     {k:"reading",l:"Reading",c:"#10b981"},
     {k:"vocabulary",l:"Vocabulary",c:"#3b82f6"},
-  ].map(function(s){
-    return "<div class='perf-bar'><div class='perf-label'>"+s.l+"</div><div class='progress-wrap' style='flex:1;background:#0c0c18'><div style='height:100%;border-radius:99px;background:"+s.c+";width:"+S.scores[s.k]+"%;transition:width .5s'></div></div><div class='perf-pct'>"+S.scores[s.k]+"%</div></div>";
-  }).join("");
-  var recent=last30.filter(function(d){return d.modules>0;}).slice(-7).reverse();
-  var rhtml=recent.length===0
-    ?"<p style='font-size:13px;color:#555;text-align:center;padding:16px'>Nenhum dia estudado ainda. Comece hoje!</p>"
-    :recent.map(function(d){
-      return "<div style='display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0c0c18;border-radius:8px;margin-bottom:6px;border:1px solid #1a1828'><span style='font-size:12px;color:#888'>"+d.weekday+" "+d.day+"/"+d.month+"</span><span style='font-size:12px;color:#a78bfa'>"+d.modules+" modulo"+(d.modules>1?"s":"")+"</span></div>";
-    }).join("");
-  return "<div class='page-title'>Minha Evolucao</div>"
-    +"<div class='page-sub'>Acompanhe seu progresso ao longo do tempo.</div>"
-    +"<div class='stats-grid'>"+stats+"</div>"
-    +"<div class='card'><div style='font-size:14px;font-weight:600;margin-bottom:16px'>Atividade nos ultimos 30 dias</div>"
-    +"<div style='display:flex;align-items:flex-end;gap:3px;height:80px;margin-bottom:8px'>"+bars+"</div>"
-    +"<div style='display:flex;justify-content:space-between;font-size:10px;color:#555'>"
-    +"<span>"+last30[0].day+"/"+last30[0].month+"</span>"
-    +"<span>"+last30[14].day+"/"+last30[14].month+"</span>"
-    +"<span>hoje</span></div></div>"
-    +"<div class='card'><div style='font-size:14px;font-weight:600;margin-bottom:16px'>Vocabulario</div>"+vbars+"</div>"
-    +"<div class='card'><div style='font-size:14px;font-weight:600;margin-bottom:16px'>Performance</div>"+mbars+"</div>"
-    +"<div class='card'><div style='font-size:14px;font-weight:600;margin-bottom:16px'>Historico recente</div>"+rhtml+"</div>";
+  ].map(s=>`
+  <div class="perf-bar">
+    <div class="perf-label">${s.l}</div>
+    <div class="progress-wrap" style="flex:1;background:#0c0c18">
+      <div style="height:100%;border-radius:99px;background:${s.c};width:${S.scores[s.k]}%;transition:width .5s"></div>
+    </div>
+    <div class="perf-pct">${S.scores[s.k]}%</div>
+  </div>`).join("")}
+</div>
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Histórico recente</div>
+  ${last30.filter(d=>d.modules>0).slice(-7).reverse().map(d=>`
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0c0c18;border-radius:8px;margin-bottom:6px;border:1px solid #1a1828">
+    <span style="font-size:12px;color:#888">${d.weekday} ${d.day}/${d.month}</span>
+    <div style="display:flex;gap:6px">
+      ${Array.from({length:d.modules}).map(()=>`<span style="width:8px;height:8px;border-radius:50%;background:#5b21b6;display:inline-block"></span>`).join("")}
+    </div>
+    <span style="font-size:12px;color:#a78bfa">${d.modules} módulo${d.modules>1?"s":""}</span>
+  </div>`).join("")}
+  ${last30.filter(d=>d.modules>0).length===0?`<p style="font-size:13px;color:#555;text-align:center;padding:16px">Nenhum dia estudado ainda. Comece hoje! 🚀</p>`:""}
+</div>`;
 }
 function applyCustomTime(){
   const inp=document.getElementById("totalTimeInput");
