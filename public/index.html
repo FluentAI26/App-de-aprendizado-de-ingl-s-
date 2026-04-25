@@ -124,7 +124,37 @@ body{font-family:'DM Sans',sans-serif;background:#08080f;color:#e2e0f0;min-heigh
 .fb-followup{background:#0f0a1e;border:1px solid #3d1d6b;border-radius:10px;padding:12px 14px;margin-top:8px}
 .fb-followup-label{font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
 .fb-followup-text{font-size:13px;color:#c4b5fd;line-height:1.6}
+
+/* ── Loading skeleton ── */
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.skeleton{background:#141222;border-radius:8px;overflow:hidden;position:relative}
+.skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,#1e1a2e 50%,transparent 100%);background-size:600px 100%;animation:shimmer 1.4s infinite}
+.sk-title{height:26px;width:55%;margin-bottom:10px}
+.sk-sub{height:14px;width:38%;margin-bottom:24px}
+.sk-card{background:#0f0f1a;border:1px solid #1a1828;border-radius:14px;padding:20px;margin-bottom:14px}
+.sk-row{display:flex;gap:10px;margin-bottom:12px}
+.sk-stat{flex:1;height:80px;border-radius:12px}
+.sk-bar{height:14px;border-radius:99px;margin-bottom:10px}
+.sk-bar-short{width:40%}
+.sk-bar-mid{width:65%}
+.sk-bar-long{width:85%}
+#content{opacity:0;transition:opacity .25s ease}
+#content.ready{opacity:1}
+.tab-icon{font-size:13px;line-height:1}
+.tab-label{font-size:11px}
 @media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr)}.tab{font-size:10px;padding:6px 8px}.page-title{font-size:18px}.stat-val{font-size:17px}.header-right{gap:5px}}
+@media(max-width:480px){
+  .tabs{padding:0 8px}
+  .tabs-inner{gap:1px;padding:4px 0}
+  .tab{padding:8px 9px;border-radius:8px;flex-direction:column;gap:2px;min-width:44px;min-height:44px;justify-content:center}
+  .tab-label{display:none}
+  .tab-icon{font-size:16px}
+  .tab.active .tab-label{display:block;font-size:9px;color:#a78bfa;font-weight:600;letter-spacing:.02em;margin-top:1px}
+  .header-right{gap:4px}
+  .level-select{font-size:11px;padding:3px 6px}
+  .xp-pill{display:none}
+  .main{padding:16px 12px 32px}
+}
 </style>
 </head>
 <body>
@@ -147,7 +177,28 @@ body{font-family:'DM Sans',sans-serif;background:#08080f;color:#e2e0f0;min-heigh
     </div>
   </header>
   <nav class="tabs"><div class="tabs-inner" id="tabsInner"></div></nav>
-  <main class="main"><div class="content" id="content"></div></main>
+  <main class="main"><div class="content" id="content">
+  <div class="sk-title skeleton"></div>
+  <div class="sk-sub skeleton"></div>
+  <div class="sk-row">
+    <div class="sk-stat skeleton"></div>
+    <div class="sk-stat skeleton"></div>
+    <div class="sk-stat skeleton"></div>
+    <div class="sk-stat skeleton"></div>
+  </div>
+  <div class="sk-card">
+    <div class="sk-bar sk-bar-mid skeleton" style="margin-bottom:14px"></div>
+    <div class="sk-bar sk-bar-long skeleton"></div>
+    <div class="sk-bar sk-bar-mid skeleton"></div>
+    <div class="sk-bar sk-bar-short skeleton"></div>
+    <div class="sk-bar sk-bar-long skeleton"></div>
+  </div>
+  <div class="sk-card">
+    <div class="sk-bar sk-bar-short skeleton" style="margin-bottom:14px"></div>
+    <div class="sk-bar sk-bar-long skeleton"></div>
+    <div class="sk-bar sk-bar-mid skeleton"></div>
+  </div>
+</div></main>
 </div>
 <div class="onboarding-overlay" id="onboarding" style="display:none">
   <div class="onboarding-card" id="onboardingCard"></div>
@@ -361,7 +412,7 @@ let S={
   tab:"dashboard",
   selListening:null,lisChecksMap:{},
   lisTopic:"",lisTopicCustom:"",genListening:null,genListeningText:"",genLoading:false,lisSpeed:1,
-  genListeningQs:[],lisAnswers:{},lisFeedback:null,lisAnsLoading:false,
+  genListeningQs:[],lisAnswers:{},lisFeedback:null,lisAnsLoading:false,shadowActive:false,shadowCountdown:0,
   speakRound:0,speakHistory:[],speakInput:"",speakFeedback:null,speakLoading:false,
   speakTopic:"",speakTopicCustom:"",speakGenPrompts:[],speakGenLoading:false,
   selReading:null,readIdx:0,readAnswers:{},readFeedback:null,readLoading:false,
@@ -384,6 +435,7 @@ let S={
 };
 
 const OB_QUESTIONS=[
+  {q:"intro",type:"intro"},
   {q:"Como você quer ser chamado?",type:"name",placeholder:"Seu nome..."},
   {q:"Qual é o seu nível de inglês atual?",type:"level",options:LEVELS},
   {q:"Qual é a sua principal meta?",type:"goal",options:[{v:2,l:"Resultado rápido (2 meses)"},{v:3,l:"Aprendizado acelerado (3 meses)"},{v:6,l:"Progresso sólido (6 meses)"},{v:12,l:"Fluência completa (12 meses)"},{v:0,l:"Aprender no meu ritmo"}]},
@@ -391,19 +443,40 @@ const OB_QUESTIONS=[
 ];
 
 function loadState(){
-  try{ const s=localStorage.getItem("fluentai_v4"); if(s) Object.assign(S,JSON.parse(s)); }catch(e){}
-  const today=new Date().toDateString();
-  if(S.lastStudyDate&&S.lastStudyDate!==today){
-    const diff=Math.floor((new Date()-new Date(S.lastStudyDate))/(864e5));
-    if(diff>1) S.streak=0;
+  const raw=localStorage.getItem("fluentai_v4");
+  if(raw){
+    let parsed=null;
+    try{ parsed=JSON.parse(raw); }catch(e){
+      console.warn("FluentAI: estado corrompido, ignorando dados salvos.",e);
+      showToast("⚠️ Dados salvos corrompidos — progresso recente pode ter sido perdido.","#f87171");
+    }
+    if(parsed && typeof parsed==="object"){
+      // campos críticos: só mescla se forem do tipo esperado
+      const critical={
+        userName:"string", level:"string", xp:"number", streak:"number",
+        totalDays:"number", lastStudyDate:"string", goalMonths:"number",
+        missionDate:"string", tab:"string",
+      };
+      const safe={};
+      for(const[k,type] of Object.entries(critical)){
+        if(parsed[k]!==undefined && typeof parsed[k]===type) safe[k]=parsed[k];
+      }
+      // objetos e arrays: valida minimamente antes de aceitar
+      if(parsed.mission && typeof parsed.mission==="object" && !Array.isArray(parsed.mission)) safe.mission=parsed.mission;
+      if(parsed.scores && typeof parsed.scores==="object" && !Array.isArray(parsed.scores)) safe.scores=parsed.scores;
+      if(parsed.vocabSRS && typeof parsed.vocabSRS==="object" && !Array.isArray(parsed.vocabSRS)) safe.vocabSRS=parsed.vocabSRS;
+      if(Array.isArray(parsed.userVocab)) safe.userVocab=parsed.userVocab;
+      if(Array.isArray(parsed.savedSpeaking)) safe.savedSpeaking=parsed.savedSpeaking;
+      if(parsed.studyLog && typeof parsed.studyLog==="object") safe.studyLog=parsed.studyLog;
+      if(parsed.missionTimes && typeof parsed.missionTimes==="object") safe.missionTimes=parsed.missionTimes;
+      if(Array.isArray(parsed.aiHistory)) safe.aiHistory=parsed.aiHistory;
+      if(Array.isArray(parsed.vocabGenWords)) safe.vocabGenWords=parsed.vocabGenWords;
+      if(parsed.lisChecksMap && typeof parsed.lisChecksMap==="object") safe.lisChecksMap=parsed.lisChecksMap;
+      // demais campos simples: mescla direto
+      Object.assign(S, parsed, safe);
+    }
   }
-  if(S.missionDate!==today){
-    S.mission={listening:false,reading:false,speaking:false,vocabulary:false};
-    S.missionDate=today;
-    S.speakRound=0; S.speakHistory=[]; S.speakFeedback=null; S.speakInput="";
-    S.sessionTime={listening:0,reading:0,speaking:0,vocabulary:0};
-    S.sessionAccum={listening:0,reading:0,speaking:0,vocabulary:0};
-  }
+  checkDayReset();
   if(!S.userVocab) S.userVocab=[];
   if(!S.savedSpeaking) S.savedSpeaking=[];
   if(!S.studyLog) S.studyLog={};
@@ -411,7 +484,74 @@ function loadState(){
   buildReviewQueue();
 }
 
-function saveState(){ try{ localStorage.setItem("fluentai_v4",JSON.stringify(S)); }catch(e){} }
+function saveState(){
+  try{
+    localStorage.setItem("fluentai_v4",JSON.stringify(S));
+  }catch(e){
+    if(e instanceof DOMException && (e.name==="QuotaExceededError"||e.name==="NS_ERROR_DOM_QUOTA_REACHED")){
+      // tenta liberar espaço limpando cache de conteúdo gerado pela IA (não é progresso do usuário)
+      const keys=["genListening","genListeningText","genListeningQs","genReading","genReadingQs",
+                  "lessonData","speakGenPrompts","vocabCustomResult","lisFeedback","readFeedback",
+                  "genReadingFeedback","speakFeedback","clickedWordTrans"];
+      keys.forEach(k=>{ if(S[k]!==undefined) S[k]=Array.isArray(S[k])?[]:null; });
+      try{
+        localStorage.setItem("fluentai_v4",JSON.stringify(S));
+        showToast("⚠️ Armazenamento quase cheio — cache da IA foi limpo. Seu progresso está salvo.","#fcd34d");
+      }catch(e2){
+        showToast("❌ Armazenamento cheio! Seu progresso não foi salvo. Libere espaço no navegador.","#f87171",6000);
+        console.error("FluentAI: falha crítica ao salvar estado.",e2);
+      }
+    }
+  }
+}
+
+function showToast(msg,color,duration){
+  const existing=document.getElementById("fluentai-toast");
+  if(existing) existing.remove();
+  const t=document.createElement("div");
+  t.id="fluentai-toast";
+  t.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f0f1a;border:1px solid ${color||"#a78bfa"};color:${color||"#a78bfa"};padding:10px 18px;border-radius:10px;font-size:13px;font-family:inherit;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.5);max-width:340px;text-align:center;line-height:1.5`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), duration||4000);
+}
+
+// Centralised day-boundary check — called on load, on render, and every 60s
+// Handles: streak break, mission reset, session reset when date changes
+let _lastCheckedDate = "";
+function checkDayReset(){
+  const today = new Date().toDateString();
+  if(_lastCheckedDate === today) return; // already checked this calendar day
+  _lastCheckedDate = today;
+
+  // ── streak: break if last study was 2+ days ago ──
+  if(S.lastStudyDate && S.lastStudyDate !== today){
+    const diff = Math.floor((new Date() - new Date(S.lastStudyDate)) / 864e5);
+    if(diff > 1 && S.streak > 0){
+      S.streak = 0;
+      saveState();
+      // only show toast if page is already fully loaded (not on initial boot)
+      if(document.getElementById("content")?.classList.contains("ready")){
+        showToast("💔 Seu streak foi zerado — você não estudou ontem. Recomece hoje!","#f87171",5000);
+      }
+    }
+  }
+
+  // ── mission + session: reset when date flips ──
+  if(S.missionDate !== today){
+    S.mission = {listening:false,reading:false,speaking:false,vocabulary:false};
+    S.missionDate = today;
+    S.speakRound = 0; S.speakHistory = []; S.speakFeedback = null; S.speakInput = "";
+    S.sessionTime = {listening:0,reading:0,speaking:0,vocabulary:0};
+    S.sessionAccum = {listening:0,reading:0,speaking:0,vocabulary:0};
+    saveState();
+    // notify user only if app was already open (not fresh load)
+    if(document.getElementById("content")?.classList.contains("ready")){
+      showToast("🌅 Novo dia! Missão de hoje reiniciada. Bora estudar?","#a78bfa",4000);
+      render();
+    }
+  }
+}
 
 function buildReviewQueue(){
   const now=Date.now();
@@ -433,10 +573,13 @@ function addXP(n){
   S.xp+=n;
   const today=new Date().toDateString();
   if(S.lastStudyDate!==today){
+    // first activity of the day: increment streak (only if studied yesterday or first ever)
     const last=S.lastStudyDate?new Date(S.lastStudyDate):null;
     const diff=last?Math.floor((new Date()-last)/864e5):99;
-    S.streak=diff<=1?S.streak+1:1;
-    S.lastStudyDate=today; S.totalDays++;
+    S.streak=diff<=1?S.streak+1:1; // +1 if consecutive, restart to 1 if gap
+    S.lastStudyDate=today;
+    S.totalDays++;
+    _lastCheckedDate=today; // sync so checkDayReset() doesn't run again this day
   }
   document.getElementById("xpVal").textContent=S.xp;
   document.getElementById("streakVal").textContent=S.streak;
@@ -463,6 +606,33 @@ function speak(text,rate){
   const vs=synth.getVoices();
   const v=vs.find(v=>v.lang==="en-US"&&v.name.includes("Google"))||vs.find(v=>v.lang==="en-US")||vs[0];
   if(v) u.voice=v; synth.speak(u);
+}
+
+function speakWithCallback(text,rate,onEnd){
+  if(!synth||!text) return; synth.cancel();
+  const u=new SpeechSynthesisUtterance(String(text).substring(0,400));
+  u.lang="en-US"; u.rate=rate||1;
+  const vs=synth.getVoices();
+  const v=vs.find(v=>v.lang==="en-US"&&v.name.includes("Google"))||vs.find(v=>v.lang==="en-US")||vs[0];
+  if(v) u.voice=v;
+  if(onEnd) u.onend=onEnd;
+  synth.speak(u);
+}
+
+function startShadow(text,rate){
+  if(!synth||!text) return;
+  S.shadowActive=false; render(); // reset any previous shadow state
+  speakWithCallback(text, rate, ()=>{
+    // audio finished — show 3-second countdown then cue
+    S.shadowActive=true; S.shadowCountdown=3; render();
+    const iv=setInterval(()=>{
+      S.shadowCountdown--;
+      if(S.shadowCountdown<=0){
+        clearInterval(iv);
+        S.shadowActive=false; S.shadowCountdown=0; render();
+      } else { render(); }
+    },1000);
+  });
 }
 function initRec(onResult,onEnd){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return null;
@@ -518,25 +688,41 @@ function stopTimer(){
 function formatTime(s){ return Math.floor(s/60)+":"+(s%60).toString().padStart(2,"0"); }
 
 async function callAI(messages,level){
+  const TIMEOUT_MS=15000;
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),TIMEOUT_MS);
   try{
-    const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages,level:level||S.level})});
+    const res=await fetch("/api/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({messages,level:level||S.level}),
+      signal:ctrl.signal,
+    });
+    clearTimeout(timer);
     const d=await res.json();
-    if(res.status===429){
-      throw new Error(d.error||"Você estudou muito hoje! 🎓 Limite atingido. Volte em alguns instantes.");
-    }
-    if(!res.ok||d.error) throw new Error(d.error||"API error");
+    if(res.status===429) throw Object.assign(new Error(d.error||"rate_limit"),{code:"RATE_LIMIT"});
+    if(!res.ok||d.error) throw Object.assign(new Error(d.error||"api_error"),{code:"API_ERROR"});
     return d.reply;
   }catch(e){
-    const msg=e.message||"";
-    if(msg.includes("429")||msg.includes("Limite")||msg.includes("Muitas")){
-      throw new Error("⏳ Muitas requisições. Aguarde alguns segundos e tente novamente.");
-    }
-    if(msg.includes("Failed to fetch")||msg.includes("NetworkError")){
-      throw new Error("📶 Sem conexão. Verifique sua internet e tente novamente.");
-    }
-    console.error("API error:",e);
-    throw e;
+    clearTimeout(timer);
+    if(e.name==="AbortError")
+      throw Object.assign(new Error("\u23f1 A IA demorou demais para responder. Tente novamente."),{code:"TIMEOUT"});
+    if(e.code==="RATE_LIMIT"||e.message.includes("429"))
+      throw Object.assign(new Error("\u23f3 Muitas requisições. Aguarde alguns segundos e tente novamente."),{code:"RATE_LIMIT"});
+    if(e.code==="API_ERROR")
+      throw e;
+    if(e.name==="TypeError"||e.message.includes("Failed to fetch")||e.message.includes("NetworkError"))
+      throw Object.assign(new Error("\U0001f4f6 Sem conexão. Verifique sua internet e tente novamente."),{code:"NETWORK"});
+    console.error("FluentAI API error:",e);
+    throw Object.assign(new Error("\u274c Erro inesperado. Tente novamente."),{code:"UNKNOWN"});
   }
+}
+
+function showInlineError(containerId,msg,onRetry){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  const retryBtn=onRetry?"<button onclick=\""+onRetry+"\" style=\"margin-top:10px;background:#1e1a2e;border:1px solid #2d2a40;color:#a78bfa;border-radius:8px;padding:6px 14px;font-size:12px;font-family:inherit;cursor:pointer\">\u21ba Tentar novamente</button>":"";
+  el.innerHTML="<div style=\"background:#1f0e0e;border:1px solid #450a0a;border-radius:10px;padding:14px;text-align:center\"><div style=\"font-size:13px;color:#f87171;margin-bottom:4px\">"+msg+"</div>"+retryBtn+"</div>";
 }
 
 const LANG=lv=>["Beginner","Basic"].includes(lv)?"Portuguese":"English";
@@ -607,6 +793,7 @@ const TABS=[
   {id:"listening",icon:"◎",label:"Listening"},{id:"speaking",icon:"◈",label:"Speaking"},
   {id:"reading",icon:"≡",label:"Reading"},{id:"vocabulary",icon:"⊟",label:"Vocabulary"},
   {id:"review",icon:"↻",label:"Review"},{id:"ai",icon:"✦",label:"AI Coach"},
+  {id:"evolucao",icon:"📈",label:"Evolução"},
   {id:"settings",icon:"⚙",label:"Config"},
 ];
 
@@ -615,16 +802,16 @@ function showTab(id){
   if(["listening","speaking","reading","vocabulary"].includes(id)) startTimer(id);
 }
 function renderTabs(){
-  document.getElementById("tabsInner").innerHTML=TABS.map(t=>`<button class="tab${S.tab===t.id?" active":""}" onclick="showTab('${t.id}')">${t.icon} ${t.label}</button>`).join("");
+  document.getElementById("tabsInner").innerHTML=TABS.map(t=>`<button class="tab${S.tab===t.id?" active":""}" onclick="showTab('${t.id}')" title="${t.label}"><span class="tab-icon">${t.icon}</span><span class="tab-label">${t.label}</span></button>`).join("");
 }
 function render(){
+  checkDayReset();
   renderTabs();
   document.getElementById("levelSelect").value=S.level;
   document.getElementById("xpVal").textContent=S.xp;
   document.getElementById("streakVal").textContent=S.streak;
   document.getElementById("userPill").textContent=S.userName?S.userName[0].toUpperCase():"⚙";
-  const map={dashboard:renderDashboard,lesson:renderLesson,listening:renderListening,speaking:renderSpeaking,reading:renderReading,vocabulary:renderVocab,review:renderReview,ai:renderAI,settings:renderSettings};
-  document.getElementById("content").innerHTML=(map[S.tab]||renderDashboard)();
+const map={dashboard:renderDashboard,lesson:renderLesson,listening:renderListening,speaking:renderSpeaking,reading:renderReading,vocabulary:renderVocab,review:renderReview,ai:renderAI,evolucao:renderEvolucao,settings:renderSettings};  document.getElementById("content").innerHTML=(map[S.tab]||renderDashboard)();
   if(S.tab==="ai") setTimeout(()=>{const ca=document.getElementById("chatArea");if(ca)ca.scrollTop=ca.scrollHeight;},50);
 }
 
@@ -667,6 +854,7 @@ function topicSelector(selKey,customKey,placeholder){
 function renderDashboard(){
   const pct=globalPct(), mc=Object.values(S.mission).filter(Boolean).length;
   const wod=getWordOfDay(); const allDone=mc===4;
+  const isNewUser=S.totalDays<=1 && mc===0 && S.xp===0;
   const last7=Array.from({length:7},(_,i)=>{
     const d=new Date(); d.setDate(d.getDate()-6+i);
     const key=d.toDateString();
@@ -677,6 +865,42 @@ function renderDashboard(){
   });
   const totalWordsStudied=Object.keys(S.vocabSRS).length+(S.userVocab||[]).length;
   const todayStudied=S.studyLog[new Date().toDateString()]?Object.keys(S.studyLog[new Date().toDateString()]).length:0;
+
+  if(isNewUser) return `
+<div class="page-title">${greeting()}</div>
+<div class="page-sub">Bem-vindo ao FluentAI${S.userName?", "+S.userName:""}! Seu coach de inglês com IA adaptativa.</div>
+<div style="background:#1a1630;border:1px solid #3d1d6b;border-radius:16px;padding:28px 24px;margin-bottom:14px;text-align:center">
+  <div style="font-size:40px;margin-bottom:14px">🎓</div>
+  <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#e2e0f0;margin-bottom:8px">Pronto para começar?</div>
+  <div style="font-size:13px;color:#888;line-height:1.7;margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto">A Lição do Dia combina Listening, Vocabulário e Speaking em 15–20 min. É o melhor jeito de começar.</div>
+  <button class="btn btn-primary" style="font-size:15px;padding:12px 28px;margin-bottom:12px" onclick="showTab('lesson')">▶ Começar Lição do Dia</button>
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px">
+    <button class="btn btn-secondary btn-sm" onclick="showTab('listening')">◎ Listening</button>
+    <button class="btn btn-secondary btn-sm" onclick="showTab('speaking')">◈ Speaking</button>
+    <button class="btn btn-secondary btn-sm" onclick="showTab('vocabulary')">⊟ Vocabulário</button>
+    <button class="btn btn-secondary btn-sm" onclick="showTab('ai')">✦ AI Coach</button>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+  ${[
+    {icon:"◎",title:"Listening",desc:"Ouça textos reais e treine compreensão",tab:"listening",c:"#8b5cf6"},
+    {icon:"◈",title:"Speaking",desc:"Produza frases com feedback da IA",tab:"speaking",c:"#f59e0b"},
+    {icon:"≡",title:"Reading",desc:"Leia e responda perguntas de compreensão",tab:"reading",c:"#10b981"},
+    {icon:"⊟",title:"Vocabulary",desc:"Aprenda com repetição espaçada (SRS)",tab:"vocabulary",c:"#3b82f6"},
+  ].map(m=>`<div onclick="showTab('${m.tab}')" style="background:#0f0f1a;border:1px solid #1a1828;border-radius:12px;padding:16px;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='${m.c}'" onmouseout="this.style.borderColor='#1a1828'">
+    <div style="font-size:20px;color:${m.c};margin-bottom:8px">${m.icon}</div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:4px">${m.title}</div>
+    <div style="font-size:11px;color:#6b7280;line-height:1.5">${m.desc}</div>
+  </div>`).join("")}
+</div>
+<div class="word-of-day">
+  <div style="font-size:10px;color:#a78bfa;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">✦ Palavra do dia</div>
+  <div style="font-size:24px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#e2e0f0;margin-bottom:4px">${wod.word}</div>
+  <div style="font-size:13px;color:#f59e0b;margin-bottom:8px">🇧🇷 ${wod.pt}</div>
+  <div style="font-size:13px;color:#888;font-style:italic;margin-bottom:12px">"${wod.use}"</div>
+  <button class="btn btn-secondary btn-sm" onclick="speak('${wod.word.replace(/'/g,"\'")}')">🔊 Ouvir pronúncia</button>
+</div>`;
+
   return `
 ${allDone?`<div class="celebrate"><div style="font-size:36px;margin-bottom:10px">🎉</div><div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#a78bfa;margin-bottom:6px">Missão completa!</div><div style="font-size:13px;color:#888">Incrível! +100 XP bônus. Volte amanhã para manter o streak!</div></div>`:""}
 <div class="page-title">${greeting()}</div>
@@ -686,10 +910,10 @@ ${allDone?`<div class="celebrate"><div style="font-size:36px;margin-bottom:10px"
   <div style="font-size:24px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#e2e0f0;margin-bottom:4px">${wod.word}</div>
   <div style="font-size:13px;color:#f59e0b;margin-bottom:8px">🇧🇷 ${wod.pt}</div>
   <div style="font-size:13px;color:#888;font-style:italic;margin-bottom:12px">"${wod.use}"</div>
-  <button class="btn btn-secondary btn-sm" onclick="speak('${wod.word.replace(/'/g,"\\'")}')">🔊 Ouvir pronúncia</button>
+  <button class="btn btn-secondary btn-sm" onclick="speak('${wod.word.replace(/'/g,"\'")}')">🔊 Ouvir pronúncia</button>
 </div>
 <div class="stats-grid">
-  ${[{v:`${pct}%`,l:"Progresso",s:S.goalMonths?S.goalMonths+" meses":"livre"},{v:`${S.streak}d`,l:"Streak",s:"dias seguidos"},{v:S.xp,l:"Total XP",s:"pontos"},{v:`${mc}/4`,l:"Missão hoje",s:"tarefas feitas"}].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
+  ${[{v:`${pct}%`,l:"Progresso",s:S.goalMonths?S.goalMonths+" meses":"livre"},{v:`${S.streak}🔥`,l:"Streak",s:"dias seguidos"},{v:S.xp,l:"Total XP",s:"pontos"},{v:`${mc}/4`,l:"Missão hoje",s:"tarefas feitas"}].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
 </div>
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:13px;font-weight:600;margin-bottom:12px">Atividade nos últimos 7 dias</div>
@@ -810,7 +1034,10 @@ async function startLesson(topic){
     const p=`Create a structured English lesson about "${topic}" for ${S.level} level. Return ONLY valid JSON:\n{"text":"[listening text 80-100 words]","vocab":[{"word":"...","pt":"...","sentence":"..."},{"word":"...","pt":"...","sentence":"..."},{"word":"...","pt":"...","sentence":"..."}],"speakPrompt":"[speaking question about ${topic}]"}`;
     const r=await callAI([{role:"user",content:p}]);
     S.lessonData=JSON.parse(r.replace(/```json|```/g,"").trim());
-  }catch(e){ S.lessonData={text:"Erro ao gerar lição. Tente novamente.",vocab:[],speakPrompt:"Describe what you know about "+topic}; }
+  }catch(e){
+    S.lessonData={text:e.message||"Erro ao gerar lição.",vocab:[],speakPrompt:"Describe what you know about "+topic};
+    showToast(e.message||"Erro ao gerar lição. Tente novamente.","#f87171");
+  }
   S.lessonLoading=false; render();
 }
 
@@ -822,7 +1049,10 @@ async function submitLessonSpeaking(){
   try{
     const p=`Student level: ${S.level}. Topic: "${S.lessonTopic}". Their answer: "${text}".\nProvide brief feedback:\n✅ Corrected: ...\n💡 More natural: ...\n🗣️ Well done! [encouragement]`;
     S.lessonData.speakFeedback=await callAI([{role:"user",content:p}]);
-  }catch(e){ S.lessonData.speakFeedback="Erro ao processar. Tente novamente."; }
+  }catch(e){
+    S.lessonData.speakFeedback=null;
+    showToast(e.message||"Erro ao processar. Tente novamente.","#f87171");
+  }
   S.lessonLoading=false; render();
 }
 
@@ -846,9 +1076,16 @@ ${timerWidget("listening")}
   <div class="text-box" style="margin-top:14px">${esc(S.genListening)}</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
     ${speeds.map(sp=>`<button class="speed-btn${S.lisSpeed===sp?" sel":""}" onclick="S.lisSpeed=${sp};render()">${sp}x</button>`).join("")}
-    <button class="btn btn-secondary btn-sm" onclick="speak(S.genListeningText,S.lisSpeed)">🔊 Ouvir</button>
-    <button class="btn btn-secondary btn-sm" onclick="speak(S.genListeningText,S.lisSpeed)">↺ Shadow</button>
+    <button class="btn btn-secondary btn-sm" onclick="S.shadowActive=false;S.shadowCountdown=0;speak(S.genListeningText,S.lisSpeed);render()">🔊 Ouvir</button>
+    <button class="btn btn-secondary btn-sm" onclick="startShadow(S.genListeningText,S.lisSpeed)" title="Ouça e repita em voz alta assim que o áudio terminar">↺ Shadow</button>
   </div>
+  ${S.shadowActive?`
+  <div style="background:#0d1a0d;border:1px solid #166534;border-radius:12px;padding:16px;text-align:center;margin-bottom:8px">
+    <div style="font-size:28px;margin-bottom:8px">${S.shadowCountdown>0?S.shadowCountdown:"🎤"}</div>
+    <div style="font-size:14px;color:#6ee7b7;font-weight:600">${S.shadowCountdown>0?"Prepare-se para repetir...":"Agora repita em voz alta!"}</div>
+    <div style="font-size:12px;color:#888;margin-top:4px">${S.shadowCountdown>0?"O texto aparecerá em "+S.shadowCountdown+"s":"Fale o texto que acabou de ouvir"}</div>
+    ${S.shadowCountdown===0?`<div class="text-box" style="margin-top:12px;text-align:left;border-color:#166534">${esc(S.genListening)}</div>`:""}
+  </div>`:""}
   ${S.genListeningQs.length>0?`
   <p style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:9px">Perguntas de compreensão:</p>
   <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
@@ -902,7 +1139,10 @@ async function generateListening(){
     try{
       S.genListeningQs=JSON.parse((await callAI([{role:"user",content:P_READING_QUESTIONS(S.genListeningText,S.level)}])).replace(/```json|```/g,"").trim());
     }catch(e){ S.genListeningQs=[]; }
-  }catch(e){ S.genListening="Erro ao gerar conteúdo. Tente novamente."; S.genListeningText=""; }
+  }catch(e){
+    S.genListening=null; S.genListeningText="";
+    showToast(e.message||"Erro ao gerar conteúdo. Tente novamente.","#f87171");
+  }
   S.genLoading=false; render();
 }
 
@@ -911,7 +1151,10 @@ async function checkListeningAnswers(){
   S.lisAnsLoading=true; render();
   try{
     S.lisFeedback=await callAI([{role:"user",content:P_READING_FEEDBACK(S.genListeningText,S.genListeningQs,S.lisAnswers,S.genListeningQs,S.level)}]);
-  }catch(e){ S.lisFeedback="Erro. Tente novamente."; }
+  }catch(e){
+    S.lisFeedback=null;
+    showToast(e.message||"Erro ao verificar respostas. Tente novamente.","#f87171");
+  }
   S.lisAnsLoading=false; render();
 }
 
@@ -993,7 +1236,7 @@ async function generateSpeakPrompts(){
     const p=`Generate 5 speaking prompts about "${topic}" for ${S.level} English level. Return ONLY JSON array of 5 strings.`;
     S.speakGenPrompts=JSON.parse((await callAI([{role:"user",content:p}])).replace(/```json|```/g,"").trim());
     S.speakRound=0;
-  }catch(e){ alert("Erro ao gerar prompts."); }
+  }catch(e){ showToast(e.message||"Erro ao gerar prompts. Tente novamente.","#f87171"); }
   S.speakGenLoading=false; render();
 }
 
@@ -1009,7 +1252,10 @@ async function submitSpeaking(){
     S.speakFeedback=reply;
     S.speakHistory.push({prompt:currentSpeakPrompt(),text,feedback:reply});
     completeTask("speaking");
-  }catch(e){ S.speakFeedback="Erro ao conectar. Verifique sua conexão."; }
+  }catch(e){
+    S.speakFeedback=null;
+    showToast(e.message||"Erro ao conectar. Tente novamente.","#f87171");
+  }
   S.speakLoading=false; render();
 }
 
@@ -1134,7 +1380,7 @@ async function clickWord(word,event){
   try{
     const r=await callAI([{role:"user",content:`Translate the English word "${clean}" to Brazilian Portuguese. Give ONLY the translation (1-4 words max). No explanation, no punctuation.`}]);
     S.clickedWordTrans=r.trim();
-  }catch(e){ S.clickedWordTrans="erro"; }
+  }catch(e){ S.clickedWordTrans=null; }
   render();
 }
 
@@ -1238,7 +1484,10 @@ async function generateReading(){
       S.genReadingQs=JSON.parse((await callAI([{role:"user",content:P_READING_QUESTIONS(S.genReading,S.level)}])).replace(/```json|```/g,"").trim());
     }catch(e){ S.genReadingQs=[]; }
     completeTask("reading");
-  }catch(e){ S.genReading="Erro ao gerar texto."; }
+  }catch(e){
+    S.genReading=null;
+    showToast(e.message||"Erro ao gerar texto. Tente novamente.","#f87171");
+  }
   S.genReadingLoading=false; render();
 }
 
@@ -1247,7 +1496,10 @@ async function submitGenReading(){
   S.genReadingFeedbackLoading=true; render();
   try{
     S.genReadingFeedback=await callAI([{role:"user",content:P_READING_FEEDBACK(S.genReading,S.genReadingQs,S.genReadingAnswers,S.genReadingQs.map((_,i)=>S.genReadingAnswers[i]||""),S.level)}]);
-  }catch(e){ S.genReadingFeedback="Erro."; }
+  }catch(e){
+    S.genReadingFeedback=null;
+    showToast(e.message||"Erro ao processar. Tente novamente.","#f87171");
+  }
   S.genReadingFeedbackLoading=false; render();
 }
 
@@ -1259,7 +1511,10 @@ async function submitReading(){
   try{
     S.readFeedback=await callAI([{role:"user",content:P_READING_FEEDBACK(item.text,item.questions,S.readAnswers,item.answers,S.level)}]);
     completeTask("reading");
-  }catch(e){ S.readFeedback="Erro."; }
+  }catch(e){
+    S.readFeedback=null;
+    showToast(e.message||"Erro ao processar feedback. Tente novamente.","#f87171");
+  }
   S.readLoading=false; render();
 }
 
@@ -1339,9 +1594,9 @@ ${S.vocabFlipped?`
 </div>`:""}
 <div style="font-size:12px;color:#6b7280;text-align:center;margin-bottom:10px">Quanto você se lembrou?</div>
 <div style="display:flex;gap:8px;margin-bottom:14px">
-  <button class="btn btn-hard" onclick="srsAnswer(${card.id},'hard')">😰 Difícil<br><span style="font-size:10px">+1 dia</span></button>
-  <button class="btn btn-medium" onclick="srsAnswer(${card.id},'medium')">🤔 Médio<br><span style="font-size:10px">+3 dias</span></button>
-  <button class="btn btn-easy" onclick="srsAnswer(${card.id},'easy')">😊 Fácil<br><span style="font-size:10px">+7 dias</span></button>
+  <button class="btn btn-hard" onclick="srsAnswer(${card.id},'hard')">😰 Difícil<br><span style="font-size:10px">≈${(()=>{const p=S.vocabSRS[card.id]||{interval:1};return p.interval<=1?"amanhã":p.interval+" dias";})()} </span></button>
+  <button class="btn btn-medium" onclick="srsAnswer(${card.id},'medium')">🤔 Médio<br><span style="font-size:10px">≈${(()=>{const p=S.vocabSRS[card.id]||{interval:1,reps:0};return p.reps===0?"1 dia":p.reps===1?"6 dias":Math.round((p.interval||1)*(p.ease||2.5))+" dias";})()} </span></button>
+  <button class="btn btn-easy" onclick="srsAnswer(${card.id},'easy')">😊 Fácil<br><span style="font-size:10px">≈${(()=>{const p=S.vocabSRS[card.id]||{interval:1,reps:0,ease:2.5};return p.reps===0?"1 dia":p.reps===1?"6 dias":Math.round((p.interval||1)*(p.ease||2.5))+" dias";})()} </span></button>
 </div>
 <div style="display:flex;gap:9px;margin-bottom:20px">
   <button class="btn btn-secondary" onclick="nextVocabCard()">→ Pular</button>
@@ -1413,13 +1668,39 @@ function srsCompute(id,quality){
 function srsAnswer(id,difficulty){
   const qualityMap={hard:1,medium:3,easy:5};
   const quality=qualityMap[difficulty]||3;
-  S.vocabSRS[id]=srsCompute(id,quality);
+  const result=srsCompute(id,quality);
+  S.vocabSRS[id]=result;
+
+  // feedback visual: próxima data de revisão
+  const nextDate=new Date(result.nextReview).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+  const dayLabel=result.interval===1?"amanhã":result.interval===6?"em 6 dias":"em "+result.interval+" dias";
+  const colorMap={hard:"#f87171",medium:"#fcd34d",easy:"#6ee7b7"};
+  const iconMap={hard:"😰",medium:"🤔",easy:"😊"};
+  const statusLabel=result.status==="learned"?"✨ Dominada!":"⟳ Para revisar";
+  showToast(
+    iconMap[difficulty]+" "+statusLabel+" · Próxima revisão: "+dayLabel+" ("+nextDate+")",
+    colorMap[difficulty],
+    3000
+  );
+
   completeTask("vocabulary"); nextVocabCard();
 }
 
 function reviewAnswer(id,difficulty,idx,total){
   const qualityMap={hard:1,medium:3,easy:5};
-  S.vocabSRS[id]=srsCompute(id,qualityMap[difficulty]||3);
+  const result=srsCompute(id,qualityMap[difficulty]||3);
+  S.vocabSRS[id]=result;
+
+  const nextDate=new Date(result.nextReview).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+  const dayLabel=result.interval===1?"amanhã":result.interval===6?"em 6 dias":"em "+result.interval+" dias";
+  const colorMap={hard:"#f87171",medium:"#fcd34d",easy:"#6ee7b7"};
+  const iconMap={hard:"😰",medium:"🤔",easy:"😊"};
+  showToast(
+    iconMap[difficulty]+" Próxima revisão: "+dayLabel+" ("+nextDate+")",
+    colorMap[difficulty],
+    2500
+  );
+
   S.reviewFlipped=false; S.reviewIdx=idx<total-1?idx+1:0;
   buildReviewQueue(); saveState(); render();
 }
@@ -1431,7 +1712,7 @@ async function generateVocab(){
   try{
     const parsed=JSON.parse((await callAI([{role:"user",content:P_VOCAB_GENERATE(topic,S.level)}])).replace(/```json|```/g,"").trim());
     S.vocabGenWords=[...(S.vocabGenWords||[]),...parsed.map((w,i)=>({...w,id:7000+Date.now()+i,cat:topic}))];
-  }catch(e){ alert("Erro ao gerar vocabulário."); }
+  }catch(e){ showToast(e.message||"Erro ao gerar vocabulário. Tente novamente.","#f87171"); }
   S.vocabGenLoading=false; render();
 }
 
@@ -1441,7 +1722,7 @@ async function generateCustomVocab(){
   S.vocabCustomLoading=true; render();
   try{
     S.vocabCustomResult=JSON.parse((await callAI([{role:"user",content:P_VOCAB_CUSTOM(word,S.level)}])).replace(/```json|```/g,"").trim());
-  }catch(e){ alert("Erro ao gerar. Tente novamente."); }
+  }catch(e){ showToast(e.message||"Erro ao gerar palavra. Tente novamente.","#f87171"); }
   S.vocabCustomLoading=false; render();
 }
 
@@ -1561,74 +1842,155 @@ async function sendAIMessage(){
   try{
     const reply=await callAI(S.aiHistory.slice(-14));
     S.aiHistory.push({role:"assistant",content:reply});
-  }catch(e){ S.aiHistory.push({role:"assistant",content:"❌ Erro de conexão. Verifique se o servidor está ativo."}); }
+  }catch(e){
+    const aiErr=e.message||"❌ Erro de conexão. Tente novamente.";
+    S.aiHistory.push({role:"assistant",content:aiErr});
+  }
   S.aiLoading=false; saveState(); render();
   setTimeout(()=>{const ca=document.getElementById("chatArea");if(ca)ca.scrollTop=ca.scrollHeight;},50);
 }
 
+function renderEvolucao(){
+  const last30=Array.from({length:30},(_,i)=>{
+    const d=new Date(); d.setDate(d.getDate()-29+i);
+    const key=d.toDateString();
+    const log=S.studyLog[key]||{};
+    const modules=Object.keys(log).length;
+    const isToday=i===29;
+    return {key,modules,isToday,day:d.getDate(),month:d.getMonth()+1,weekday:["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]};
+  });
+  const daysStudied=last30.filter(d=>d.modules>0).length;
+  const avgModules=daysStudied>0?(last30.reduce((a,d)=>a+d.modules,0)/daysStudied).toFixed(1):0;
+  const bestStreak=(()=>{let max=0,cur=0;last30.forEach(d=>{if(d.modules>0){cur++;max=Math.max(max,cur);}else cur=0;});return max;})();
+  const maxModules=Math.max(...last30.map(d=>d.modules),1);
+  const learned=Object.values(S.vocabSRS).filter(v=>v.status==="learned").length;
+  const totalReviewed=Object.keys(S.vocabSRS).length;
+  return `
+<div class="page-title">📈 Minha Evolução</div>
+<div class="page-sub">Acompanhe seu progresso real ao longo do tempo.</div>
+<div class="stats-grid">
+  ${[
+    {v:daysStudied,l:"Dias estudados",s:"últimos 30 dias"},
+    {v:S.streak+"d",l:"Streak atual",s:"dias seguidos"},
+    {v:bestStreak+"d",l:"Melhor streak",s:"últimos 30 dias"},
+    {v:avgModules,l:"Módulos/dia",s:"média dos dias ativos"},
+  ].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
+</div>
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Atividade nos últimos 30 dias</div>
+  <div style="display:flex;align-items:flex-end;gap:3px;height:80px;margin-bottom:8px">
+    ${last30.map(d=>{
+      const h=d.modules===0?4:Math.max(12,Math.round((d.modules/maxModules)*80));
+      const color=d.isToday?"#a78bfa":d.modules>0?"#5b21b6":"#1a1828";
+      const border=d.isToday?"2px solid #a78bfa":"none";
+      return `<div style="flex:1;height:${h}px;background:${color};border-radius:3px;border:${border}" title="${d.weekday} ${d.day}/${d.month}: ${d.modules} módulo(s)"></div>`;
+    }).join("")}
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:10px;color:#555">
+    <span>${last30[0].day}/${last30[0].month}</span>
+    <span>${last30[14].day}/${last30[14].month}</span>
+    <span>hoje</span>
+  </div>
+  <div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap">
+    <span style="font-size:11px;color:#555">■ <span style="color:#5b21b6">estudou</span></span>
+    <span style="font-size:11px;color:#555">■ <span style="color:#a78bfa">hoje</span></span>
+    <span style="font-size:11px;color:#555">■ <span style="color:#1a1828">sem estudo</span></span>
+  </div>
+</div>
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Vocabulário</div>
+  ${[
+    {l:"Total estudado",v:totalReviewed,c:"#a78bfa"},
+    {l:"Dominadas",v:learned,c:"#6ee7b7"},
+    {l:"Para revisar",v:totalReviewed-learned,c:"#fcd34d"},
+    {l:"Palavras minhas",v:(S.userVocab||[]).length,c:"#60a5fa"},
+  ].map(s=>`<div class="perf-bar"><div class="perf-label">${s.l}</div><div class="progress-wrap" style="flex:1;background:#0c0c18"><div style="height:100%;border-radius:99px;background:${s.c};width:${totalReviewed>0?Math.round((s.v/Math.max(totalReviewed,1))*100):0}%;transition:width .5s"></div></div><div class="perf-pct" style="color:${s.c};width:40px">${s.v}</div></div>`).join("")}
+</div>
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Performance por módulo</div>
+  ${[
+    {k:"listening",l:"Listening",c:"#8b5cf6"},
+    {k:"speaking",l:"Speaking",c:"#f59e0b"},
+    {k:"reading",l:"Reading",c:"#10b981"},
+    {k:"vocabulary",l:"Vocabulary",c:"#3b82f6"},
+  ].map(s=>`<div class="perf-bar"><div class="perf-label">${s.l}</div><div class="progress-wrap" style="flex:1;background:#0c0c18"><div style="height:100%;border-radius:99px;background:${s.c};width:${S.scores[s.k]}%;transition:width .5s"></div></div><div class="perf-pct">${S.scores[s.k]}%</div></div>`).join("")}
+</div>
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Histórico recente</div>
+  ${last30.filter(d=>d.modules>0).slice(-7).reverse().map(d=>{
+    const dots=Array.from({length:d.modules}).map(()=>'<span style="width:8px;height:8px;border-radius:50%;background:#5b21b6;display:inline-block"></span>').join("");
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0c0c18;border-radius:8px;margin-bottom:6px;border:1px solid #1a1828"><span style="font-size:12px;color:#888">'+d.weekday+' '+d.day+'/'+d.month+'</span><div style="display:flex;gap:6px">'+dots+'</div><span style="font-size:12px;color:#a78bfa">'+d.modules+' módulo'+(d.modules>1?'s':'')+'</span></div>';
+  }).join("")}
+  ${last30.filter(d=>d.modules>0).length===0?'<p style="font-size:13px;color:#555;text-align:center;padding:16px">Nenhum dia estudado ainda. Comece hoje! 🚀</p>':""}
+</div>`;
+}
 function renderSettings(){
-  const total=Object.values(S.missionTimes).reduce((a,b)=>a+b,0);
+  const totalMin=Object.values(S.missionTimes).reduce((a,b)=>a+b,0);
+  const goalLabel=S.goalMonths===0?"No meu ritmo":S.goalMonths===1?"1 mês":S.goalMonths+" meses";
   return `
 <div class="page-title">⚙ Configurações</div>
 <div class="page-sub">Personalize sua experiência de aprendizado.</div>
+
 <div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:14px">Seu perfil</div>
-  <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">Seu nome</label>
-  <input class="inp" id="nameInput" value="${esc(S.userName)}" placeholder="Digite seu nome..." style="max-width:280px;margin-bottom:12px"/>
-  <button class="btn btn-primary btn-sm" onclick="saveName()">Salvar nome</button>
-</div>
-<div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:14px">Nível de inglês</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    ${LEVELS.map(l=>`<button class="goal-btn${S.level===l?" sel":""}" onclick="onLevelChange('${l}')">${l}</button>`).join("")}
+  <div style="font-size:14px;font-weight:600;margin-bottom:14px">👤 Seu perfil</div>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+    <input class="inp" id="nameInput" placeholder="Seu nome..." value="${esc(S.userName)}" style="flex:1"/>
+    <button class="btn btn-secondary" onclick="saveName()">Salvar</button>
   </div>
+  <div style="font-size:12px;color:#6b7280">Nível atual: <span style="color:#a78bfa;font-weight:600">${S.level}</span> · XP total: <span style="color:#a78bfa;font-weight:600">${S.xp}</span> · Streak: <span style="color:#fcd34d;font-weight:600">${S.streak}🔥</span></div>
 </div>
+
 <div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:4px">Meta de aprendizado</div>
-  <div style="font-size:12px;color:#6b7280;margin-bottom:14px">Em quanto tempo quer atingir o próximo nível?</div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
-    ${[{v:1,l:"1 mês"},{v:2,l:"2 meses"},{v:3,l:"3 meses"},{v:6,l:"6 meses"},{v:12,l:"12 meses"},{v:0,l:"Sem meta"}].map(g=>`<button class="goal-btn${S.goalMonths===g.v&&!S.goalCustom?" sel":""}" onclick="S.goalMonths=${g.v};S.goalCustom='';const i=document.getElementById('goalCustomInput');if(i)i.value='';saveState();render()">${g.l}</button>`).join("")}
+  <div style="font-size:14px;font-weight:600;margin-bottom:14px">⏱ Tempo de estudo diário</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Total atual: <span style="color:#a78bfa;font-weight:600">${totalMin} minutos/dia</span></div>
+  <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
+    ${TIME_OPTIONS.map((o,i)=>`<button class="goal-btn${totalMin===o.total&&!S.missionTimeCustom?" sel":""}" onclick="S.missionTimes=${JSON.stringify(o.l)};S.missionTimeCustom='';const ti=document.getElementById('totalTimeInput');if(ti)ti.value='';saveState();render()">${o.total} minutos por dia</button>`).join("")}
   </div>
   <div style="display:flex;gap:8px;align-items:center">
-    <input class="inp-number" id="goalCustomInput" type="number" min="1" max="120" placeholder="Outro..." value="${esc(S.goalCustom)}" oninput="S.goalCustom=this.value;if(this.value){S.goalMonths=parseInt(this.value)||S.goalMonths;}saveState()"/>
-    <span style="font-size:12px;color:#6b7280">meses personalizados</span>
+    <input class="inp-number" id="totalTimeInput" type="number" min="15" max="300" placeholder="Outro..." value="${esc(S.missionTimeCustom)}" oninput="S.missionTimeCustom=this.value"/>
+    <span style="font-size:12px;color:#6b7280">minutos</span>
+    <button class="btn btn-secondary" onclick="applyCustomTime()">Aplicar</button>
+  </div>
+  <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
+    ${[{k:"listening",l:"Listening",c:"#8b5cf6"},{k:"reading",l:"Reading",c:"#10b981"},{k:"speaking",l:"Speaking",c:"#f59e0b"},{k:"vocabulary",l:"Vocabulary",c:"#3b82f6"}].map(m=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0c0c18;border-radius:8px;border:1px solid #1a1828">
+      <span style="font-size:12px;color:#888">${m.l}</span>
+      <span style="font-size:13px;font-weight:600;color:${m.c}">${S.missionTimes[m.k]} min</span>
+    </div>`).join("")}
   </div>
 </div>
+
 <div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:4px">Tempo da missão diária</div>
-  <div style="font-size:12px;color:#6b7280;margin-bottom:8px">Total atual: <strong style="color:#a78bfa">${total} minutos</strong></div>
-  <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-    <input class="inp-number" id="totalTimeInput" type="number" min="15" max="240" placeholder="Total min..." value="${S.missionTimeCustom||total}"/>
-    <button class="btn btn-secondary btn-sm" onclick="applyCustomTime()">Distribuir automaticamente</button>
-    <span style="font-size:12px;color:#555">ou ajuste manualmente:</span>
-  </div>
-  ${[{k:"listening",l:"◎ Listening"},{k:"reading",l:"≡ Reading"},{k:"speaking",l:"◈ Speaking"},{k:"vocabulary",l:"⊟ Vocabulary"}].map(m=>`
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-    <div style="width:100px;font-size:13px;color:#888">${m.l}</div>
-    <input type="range" min="5" max="90" step="5" value="${S.missionTimes[m.k]}" style="flex:1"
-      oninput="S.missionTimes['${m.k}']=parseInt(this.value);document.getElementById('t_${m.k}').textContent=this.value+' min';saveState()"/>
-    <div style="width:50px;font-size:13px;font-weight:500;color:#a78bfa;text-align:right" id="t_${m.k}">${S.missionTimes[m.k]} min</div>
-  </div>`).join("")}
-</div>
-<div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:4px">Lembrete de estudo</div>
-  <div style="font-size:12px;color:#6b7280;margin-bottom:14px">Receba uma notificação no browser para estudar.</div>
-  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-    <input class="inp-number" id="reminderHourInp" type="number" min="6" max="23" value="${S.reminderHour}" oninput="S.reminderHour=parseInt(this.value)||20"/>
-    <span style="font-size:13px;color:#888">h (horário preferido)</span>
-    <button class="btn btn-primary btn-sm" onclick="requestNotification()">Ativar lembrete</button>
-    ${S.reminderEnabled?`<span style="font-size:12px;color:#6ee7b7">✓ Ativado às ${S.reminderHour}h</span>`:""}
+  <div style="font-size:14px;font-weight:600;margin-bottom:14px">🎯 Meta de fluência</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Meta atual: <span style="color:#a78bfa;font-weight:600">${goalLabel}</span> · Progresso: <span style="color:#a78bfa;font-weight:600">${globalPct()}%</span></div>
+  <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
+    ${[{v:2,l:"Resultado rápido (2 meses)"},{v:3,l:"Acelerado (3 meses)"},{v:6,l:"Sólido (6 meses)"},{v:12,l:"Fluência completa (12 meses)"},{v:0,l:"No meu ritmo"}].map(o=>`<button class="goal-btn${S.goalMonths===o.v?" sel":""}" onclick="S.goalMonths=${o.v};S.goalCustom='';saveState();render()">${o.l}</button>`).join("")}
   </div>
 </div>
+
 <div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:14px">Suas estatísticas</div>
-  <div style="display:flex;flex-direction:column;gap:7px;font-size:13px">
-    ${[["Dias estudados",S.totalDays,"#a78bfa"],["Streak atual","🔥 "+S.streak+" dias","#fcd34d"],["Total XP","✦ "+S.xp,"#a78bfa"],["Palavras no banco",Object.keys(S.vocabSRS).length+(S.userVocab||[]).length,"#a78bfa"],["Palavras dominadas",Object.values(S.vocabSRS).filter(v=>v.status==="learned").length,"#6ee7b7"],["Palavras minhas",(S.userVocab||[]).length,"#60a5fa"]].map(([l,v,c])=>`<div style="display:flex;justify-content:space-between"><span style="color:#888">${l}</span><span style="color:${c};font-weight:500">${v}</span></div>`).join("")}
+  <div style="font-size:14px;font-weight:600;margin-bottom:14px">🔔 Lembrete de estudo</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span style="font-size:13px;color:#888">Notificações diárias</span>
+    <span style="font-size:12px;color:${S.reminderEnabled?"#6ee7b7":"#555"};font-weight:600">${S.reminderEnabled?"✅ Ativo":"Desativado"}</span>
   </div>
-  <button class="btn btn-secondary btn-sm" style="margin-top:14px;color:#f87171;border-color:#450a0a" onclick="if(confirm('Resetar todo o progresso? Esta ação não pode ser desfeita.')){localStorage.removeItem('fluentai_v4');location.reload()}">Resetar progresso</button>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+    <span style="font-size:12px;color:#888">Horário:</span>
+    <input class="inp-number" type="number" min="0" max="23" value="${S.reminderHour}" oninput="S.reminderHour=parseInt(this.value)||20;saveState()" style="width:70px"/>
+    <span style="font-size:12px;color:#6b7280">horas</span>
+  </div>
+  <button class="btn btn-secondary" onclick="requestNotification()">${S.reminderEnabled?"🔔 Reativar lembrete":"🔔 Ativar lembrete"}</button>
+</div>
+
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:6px">⚠️ Zona de perigo</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:14px">Ações irreversíveis. Cuidado!</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn" style="background:#1a0a0a;color:#f87171;border:1px solid #450a0a;font-size:13px;padding:7px 14px" onclick="if(confirm('Resetar TODO o progresso? Isso não pode ser desfeito.')){localStorage.removeItem('fluentai_v4');location.reload();}">🗑 Resetar tudo</button>
+    <button class="btn btn-secondary" onclick="showOnboarding()">↺ Refazer onboarding</button>
+  </div>
 </div>`;
 }
-
 function applyCustomTime(){
   const inp=document.getElementById("totalTimeInput");
   const total=parseInt(inp?.value||60);
@@ -1658,35 +2020,67 @@ function showOnboarding(){
 function renderOnboarding(){
   const q=OB_QUESTIONS[S.onboardStep];
   const card=document.getElementById("onboardingCard"); if(!card) return;
-  const pct=Math.round((S.onboardStep/OB_QUESTIONS.length)*100);
+  // progress bar excludes intro step (step 0) — shows 0→100% across the 4 real questions
+  const realSteps=OB_QUESTIONS.length-1;
+  const realStep=Math.max(0,S.onboardStep-1);
+  const pct=q.type==="intro"?0:Math.round((realStep/realSteps)*100);
+  const isLast=S.onboardStep===OB_QUESTIONS.length-1;
+
   let inner=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
     <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:#a78bfa">fluent<span style="color:#e2e0f0">ai</span></span>
-    <span style="font-size:12px;color:#555">${S.onboardStep+1} / ${OB_QUESTIONS.length}</span>
+    ${q.type==="intro"?'<span style="font-size:11px;color:#555;background:#14121e;padding:2px 8px;border-radius:99px">Bem-vindo!</span>':`<span style="font-size:12px;color:#555">${realStep+1} / ${realSteps}</span>`}
   </div>
-  <div class="progress-wrap" style="margin-bottom:22px"><div class="progress-bar" style="width:${pct}%"></div></div>
-  <div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:18px;line-height:1.4">${q.q}</div>`;
+  <div class="progress-wrap" style="margin-bottom:22px"><div class="progress-bar" style="width:${pct}%;transition:width .4s"></div></div>`;
 
-  if(q.type==="name"){
-    inner+=`<input class="inp" id="obName" placeholder="${q.placeholder}" value="${esc(S.onboardAnswers.name||"")}" style="margin-bottom:16px"/>`;
-  } else if(q.type==="level"){
-    inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">${q.options.map(o=>`<button class="goal-btn${S.onboardAnswers.level===o?" sel":""}" onclick="S.onboardAnswers.level='${o}';renderOnboarding()">${o}</button>`).join("")}</div>`;
-  } else if(q.type==="goal"){
-    inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">${q.options.map(o=>`<button class="goal-btn${S.onboardAnswers.goalMonths===o.v&&!S.onboardAnswers.goalCustom?" sel":""}" onclick="S.onboardAnswers.goalMonths=${o.v};S.onboardAnswers.goalCustom='';const i=document.getElementById('obGoalCustom');if(i)i.value='';renderOnboarding()">${o.l}</button>`).join("")}</div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
-      <input class="inp-number" id="obGoalCustom" type="number" min="1" max="120" placeholder="Outro prazo..." value="${S.onboardAnswers.goalCustom||""}" oninput="S.onboardAnswers.goalCustom=this.value;if(this.value){S.onboardAnswers.goalMonths=parseInt(this.value)||12;}renderOnboarding()"/>
-      <span style="font-size:12px;color:#6b7280">meses</span>
+  if(q.type==="intro"){
+    inner+=`
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-size:42px;margin-bottom:12px">🎓</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#e2e0f0;margin-bottom:8px;line-height:1.3">Aprenda inglês de verdade<br>com IA adaptativa</div>
+      <div style="font-size:13px;color:#888;line-height:1.7;max-width:340px;margin:0 auto">O FluentAI usa inteligência artificial para criar conteúdo personalizado de Listening, Speaking, Reading e Vocabulário — todo dia, no seu nível.</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
+      ${[
+        {icon:"◎",c:"#8b5cf6",t:"Listening",d:"Textos reais com perguntas de compreensão"},
+        {icon:"◈",c:"#f59e0b",t:"Speaking",d:"Feedback da IA na sua produção oral"},
+        {icon:"≡",c:"#10b981",t:"Reading",d:"Leitura adaptada ao seu nível"},
+        {icon:"⊟",c:"#3b82f6",t:"Vocabulary",d:"Repetição espaçada com algoritmo SRS"},
+      ].map(m=>`<div style="background:#0c0c18;border:1px solid #1a1828;border-radius:10px;padding:12px">
+        <div style="font-size:18px;color:${m.c};margin-bottom:6px">${m.icon} <span style="font-size:13px;font-weight:600;color:#e2e0f0">${m.t}</span></div>
+        <div style="font-size:11px;color:#6b7280;line-height:1.5">${m.d}</div>
+      </div>`).join("")}
+    </div>
+    <div style="background:#0f0a1e;border:1px solid #3d1d6b;border-radius:10px;padding:12px;text-align:center;margin-bottom:20px">
+      <div style="font-size:12px;color:#a78bfa;font-weight:600">💡 Leva só 15–20 minutos por dia</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:3px">Missão diária gamificada com streak, XP e progressão de nível</div>
     </div>`;
-  } else if(q.type==="time"){
-    inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">${TIME_OPTIONS.map((o,i)=>`<button class="goal-btn${S.onboardAnswers.timeIdx===i&&!S.onboardAnswers.timeCustom?" sel":""}" onclick="S.onboardAnswers.timeIdx=${i};S.onboardAnswers.time=${o.total};S.onboardAnswers.timeCustom='';const inp=document.getElementById('obTimeCustom');if(inp)inp.value='';renderOnboarding()">${o.total} minutos por dia</button>`).join("")}</div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
-      <input class="inp-number" id="obTimeCustom" type="number" min="10" max="300" placeholder="Outro tempo..." value="${S.onboardAnswers.timeCustom||""}" oninput="S.onboardAnswers.timeCustom=this.value;if(this.value){S.onboardAnswers.time=parseInt(this.value)||60;S.onboardAnswers.timeIdx=-1;}renderOnboarding()"/>
-      <span style="font-size:12px;color:#6b7280">minutos por dia</span>
-    </div>`;
+  } else {
+    inner+=`<div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:18px;line-height:1.4">${q.q}</div>`;
+    if(q.type==="name"){
+      inner+=`<input class="inp" id="obName" placeholder="${q.placeholder}" value="${esc(S.onboardAnswers.name||"")}" style="margin-bottom:16px" onkeydown="if(event.key==='Enter')obNext()"/>`;
+    } else if(q.type==="level"){
+      inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">${q.options.map(o=>`<button class="goal-btn${S.onboardAnswers.level===o?" sel":""}" onclick="S.onboardAnswers.level='${o}';renderOnboarding()">${o}</button>`).join("")}</div>`;
+    } else if(q.type==="goal"){
+      inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">${q.options.map(o=>`<button class="goal-btn${S.onboardAnswers.goalMonths===o.v&&!S.onboardAnswers.goalCustom?" sel":""}" onclick="S.onboardAnswers.goalMonths=${o.v};S.onboardAnswers.goalCustom='';const i=document.getElementById('obGoalCustom');if(i)i.value='';renderOnboarding()">${o.l}</button>`).join("")}</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+        <input class="inp-number" id="obGoalCustom" type="number" min="1" max="120" placeholder="Outro prazo..." value="${S.onboardAnswers.goalCustom||""}" oninput="S.onboardAnswers.goalCustom=this.value;if(this.value){S.onboardAnswers.goalMonths=parseInt(this.value)||12;}renderOnboarding()"/>
+        <span style="font-size:12px;color:#6b7280">meses</span>
+      </div>`;
+    } else if(q.type==="time"){
+      inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">${TIME_OPTIONS.map((o,i)=>`<button class="goal-btn${S.onboardAnswers.timeIdx===i&&!S.onboardAnswers.timeCustom?" sel":""}" onclick="S.onboardAnswers.timeIdx=${i};S.onboardAnswers.time=${o.total};S.onboardAnswers.timeCustom='';const inp=document.getElementById('obTimeCustom');if(inp)inp.value='';renderOnboarding()">${o.total} minutos por dia</button>`).join("")}</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+        <input class="inp-number" id="obTimeCustom" type="number" min="10" max="300" placeholder="Outro tempo..." value="${S.onboardAnswers.timeCustom||""}" oninput="S.onboardAnswers.timeCustom=this.value;if(this.value){S.onboardAnswers.time=parseInt(this.value)||60;S.onboardAnswers.timeIdx=-1;}renderOnboarding()"/>
+        <span style="font-size:12px;color:#6b7280">minutos por dia</span>
+      </div>`;
+    }
   }
 
-  const canNext=(q.type==="name")||(q.type==="level"&&S.onboardAnswers.level)||(q.type==="goal"&&(S.onboardAnswers.goalMonths!==undefined||S.onboardAnswers.goalCustom))||(q.type==="time"&&(S.onboardAnswers.time||S.onboardAnswers.timeCustom));
-  inner+=`<button class="btn btn-primary" style="width:100%;justify-content:center" onclick="obNext()" ${!canNext?"disabled":""}>${S.onboardStep===OB_QUESTIONS.length-1?"Começar a aprender! 🚀":"Continuar →"}</button>`;
+  const canNext=q.type==="intro"||q.type==="name"||(q.type==="level"&&S.onboardAnswers.level)||(q.type==="goal"&&(S.onboardAnswers.goalMonths!==undefined||S.onboardAnswers.goalCustom))||(q.type==="time"&&(S.onboardAnswers.time||S.onboardAnswers.timeCustom));
+  const btnLabel=q.type==="intro"?"Personalizar meu plano →":isLast?"Começar a aprender! 🚀":"Continuar →";
+  inner+=`<button class="btn btn-primary" style="width:100%;justify-content:center" onclick="obNext()" ${!canNext?"disabled":""}>${btnLabel}</button>`;
   card.innerHTML=inner;
+  // auto-focus name input for faster typing
+  if(q.type==="name"){ const inp=document.getElementById("obName"); if(inp) setTimeout(()=>inp.focus(),50); }
 }
 
 function obNext(){
@@ -1714,6 +2108,10 @@ if(synth) synth.onvoiceschanged=()=>synth.getVoices();
 loadState();
 const isFirst=!S.userName&&S.totalDays===0;
 render();
+// poll every 60s — catches midnight rollover when app stays open overnight
+setInterval(checkDayReset, 60_000);
+// reveal content with fade after first render — hides FOUC and skeleton flash
+requestAnimationFrame(()=>{ const el=document.getElementById("content"); if(el) el.classList.add("ready"); });
 if(isFirst) showOnboarding();
 if(["listening","speaking","reading","vocabulary"].includes(S.tab)) startTimer(S.tab);
 </script>
