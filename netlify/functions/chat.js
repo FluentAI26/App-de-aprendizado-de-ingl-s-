@@ -16,6 +16,22 @@
 const rateLimitStore = {};
 const dailyLimitStore = {};
 
+// Limpeza periódica — remove entradas expiradas para evitar memory leak
+// Roda a cada 30 minutos enquanto a instância estiver ativa
+setInterval(() => {
+  const now = Date.now();
+  for (const ip of Object.keys(rateLimitStore)) {
+    if (now - rateLimitStore[ip].windowStart > RATE_WINDOW_MS * 2) {
+      delete rateLimitStore[ip];
+    }
+  }
+  for (const ip of Object.keys(dailyLimitStore)) {
+    if (now - dailyLimitStore[ip].dayStart > DAY_MS * 2) {
+      delete dailyLimitStore[ip];
+    }
+  }
+}, 30 * 60 * 1000).unref(); // .unref() não bloqueia o event loop da função
+
 const RATE_WINDOW_MS = 60 * 1000;      // janela de 1 minuto
 const RATE_MAX_PER_MIN = 10;           // máx 10 req por minuto por IP
 const RATE_MAX_PER_DAY = 200;          // máx 200 req por dia por IP
@@ -60,7 +76,7 @@ function checkRateLimit(ip) {
     return {
       blocked: true,
       reason: "Limite diário atingido. Volte amanhã para continuar estudando! 🎓",
-      retryAfter: Math.ceil((DAY_MS - (now - dayData.dayStart)) / 60),
+      retryAfter: Math.ceil((DAY_MS - (now - dayData.dayStart)) / 1000),
     };
   }
 
@@ -205,25 +221,45 @@ Rules:
 - Never just translate — teach patterns and chunks
 - If they write in Portuguese, gently redirect to English`;
 
-  // ── Chamada à API do Groq ────────────────────────────────────
+  // ── Chamada à API do Groq (timeout 8s — margem antes do limite 10s da Netlify) ──
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        // ✅ Modelo atualizado: 14.400 req/dia grátis (era 1.000)
-        model: "llama-3.1-8b-instant",
-        max_tokens: 400,
-        temperature: 0.7,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...safeMessages,
-        ],
-      }),
-    });
+    const ctrl = new AbortController();
+    const groqTimeout = setTimeout(() => ctrl.abort(), 8000);
+
+    let response;
+    try {
+      response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          // ✅ Modelo atualizado: 14.400 req/dia grátis (era 1.000)
+          model: "llama-3.1-8b-instant",
+          max_tokens: 400,
+          temperature: 0.7,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...safeMessages,
+          ],
+        }),
+        signal: ctrl.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(groqTimeout);
+      if (fetchErr.name === "AbortError") {
+        return {
+          statusCode: 408,
+          headers,
+          body: JSON.stringify({
+            error: "⏱ A IA demorou demais para responder. Tente novamente.",
+          }),
+        };
+      }
+      throw fetchErr; // repassa para o catch externo
+    }
+    clearTimeout(groqTimeout);
 
     // ── Erro da API do Groq ──────────────────────────────────
     if (!response.ok) {
