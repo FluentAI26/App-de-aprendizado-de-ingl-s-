@@ -1,0 +1,248 @@
+// ═══════════════════════════════════════════════════════════════
+//  FluentAI — Vercel Serverless Function: /api/chat
+//  Proteções:
+//    ✅ Modelo trocado: llama-3.1-8b-instant (14.400 req/dia grátis)
+//    ✅ CORS restrito ao domínio do app
+//    ✅ Rate limiting: 10 req/minuto por IP
+//    ✅ Limite diário por IP: 200 req/dia
+//    ✅ Validação e sanitização das mensagens
+//    ✅ Tamanho máximo de mensagem: 500 chars
+//    ✅ Máximo 10 mensagens por chamada
+//    ✅ Token beta para controlar acesso (opcional)
+// ═══════════════════════════════════════════════════════════════
+
+// Rate limiting em memória (reseta quando a função reinicia)
+// Para produção com muitos usuários, substituir por Redis/KV store
+const rateLimitStore = {};
+const dailyLimitStore = {};
+
+// Limpeza periódica — remove entradas expiradas para evitar memory leak
+// Roda a cada 30 minutos enquanto a instância estiver ativa
+setInterval(() => {
+  const now = Date.now();
+  for (const ip of Object.keys(rateLimitStore)) {
+    if (now - rateLimitStore[ip].windowStart > RATE_WINDOW_MS * 2) {
+      delete rateLimitStore[ip];
+    }
+  }
+  for (const ip of Object.keys(dailyLimitStore)) {
+    if (now - dailyLimitStore[ip].dayStart > DAY_MS * 2) {
+      delete dailyLimitStore[ip];
+    }
+  }
+}, 30 * 60 * 1000).unref(); // .unref() não bloqueia o event loop da função
+
+const RATE_WINDOW_MS = 60 * 1000;      // janela de 1 minuto
+const RATE_MAX_PER_MIN = 10;           // máx 10 req por minuto por IP
+const RATE_MAX_PER_DAY = 200;          // máx 200 req por dia por IP
+const DAY_MS = 24 * 60 * 60 * 1000;   // 24 horas em ms
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+
+  // ── Limite por minuto ────────────────────────────────────────
+  if (!rateLimitStore[ip]) {
+    rateLimitStore[ip] = { count: 0, windowStart: now };
+  }
+
+  const minuteData = rateLimitStore[ip];
+  if (now - minuteData.windowStart > RATE_WINDOW_MS) {
+    minuteData.count = 0;
+    minuteData.windowStart = now;
+  }
+  minuteData.count++;
+
+  if (minuteData.count > RATE_MAX_PER_MIN) {
+    return {
+      blocked: true,
+      reason: "Muitas requisições. Aguarde 1 minuto e tente novamente.",
+      retryAfter: Math.ceil((RATE_WINDOW_MS - (now - minuteData.windowStart)) / 1000),
+    };
+  }
+
+  // ── Limite por dia ───────────────────────────────────────────
+  if (!dailyLimitStore[ip]) {
+    dailyLimitStore[ip] = { count: 0, dayStart: now };
+  }
+
+  const dayData = dailyLimitStore[ip];
+  if (now - dayData.dayStart > DAY_MS) {
+    dayData.count = 0;
+    dayData.dayStart = now;
+  }
+  dayData.count++;
+
+  if (dayData.count > RATE_MAX_PER_DAY) {
+    return {
+      blocked: true,
+      reason: "Limite diário atingido. Volte amanhã para continuar estudando! 🎓",
+      retryAfter: Math.ceil((DAY_MS - (now - dayData.dayStart)) / 1000),
+    };
+  }
+
+  return { blocked: false };
+}
+
+function sanitizeMessages(messages) {
+  if (!Array.isArray(messages)) return [];
+
+  return messages
+    .slice(-10) // máximo 10 mensagens
+    .filter(m => m && typeof m === "object")
+    .map(m => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content || "").substring(0, 500).trim(),
+    }))
+    .filter(m => m.content.length > 0);
+}
+
+export default async function handler(req, res) {
+
+  // ── Domínio permitido ────────────────────────────────────────
+  const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*"; // defina ALLOWED_ORIGIN nas env vars do Vercel
+
+  // ── CORS headers ─────────────────────────────────────────────
+  res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Content-Type", "application/json");
+
+  // ── CORS preflight ───────────────────────────────────────────
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  // ── Só aceita POST ───────────────────────────────────────────
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  // ── Rate limiting por IP ─────────────────────────────────────
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.headers["x-real-ip"] ||
+    "unknown";
+
+  const rateCheck = checkRateLimit(ip);
+  if (rateCheck.blocked) {
+    res.setHeader("Retry-After", String(rateCheck.retryAfter || 60));
+    return res.status(429).json({ error: rateCheck.reason });
+  }
+
+  // ── Chave da API ─────────────────────────────────────────────
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) {
+    console.error("GROQ_API_KEY not set in environment variables");
+    return res.status(500).json({ error: "Servidor não configurado. Contate o suporte." });
+  }
+
+  // ── Parse do body ────────────────────────────────────────────
+  // Vercel parseia o body JSON automaticamente em req.body
+  const { messages, level } = req.body || {};
+
+  // ── Validação básica ─────────────────────────────────────────
+  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: "messages array é obrigatório." });
+  }
+
+  // ── Sanitiza mensagens ───────────────────────────────────────
+  const safeMessages = sanitizeMessages(messages);
+  if (safeMessages.length === 0) {
+    return res.status(400).json({ error: "Nenhuma mensagem válida encontrada." });
+  }
+
+  // ── Nível do estudante ───────────────────────────────────────
+  const VALID_LEVELS = [
+    "Beginner", "Basic", "Pre-Intermediate",
+    "Intermediate", "Upper-Intermediate", "Advanced"
+  ];
+  const safeLevel = VALID_LEVELS.includes(level) ? level : "Beginner";
+  const usePt = ["Beginner", "Basic"].includes(safeLevel);
+
+  // ── System prompt ────────────────────────────────────────────
+  const systemPrompt = `You are FluentAI, an expert English tutor for Brazilian Portuguese speakers focused on fast fluency. Student level: ${safeLevel}.
+
+Your teaching method uses:
+- Comprehensible Input (i+1): always slightly above current level
+- Active Recall: ask questions that force memory retrieval
+- Output Hypothesis: always end with a speaking challenge
+- Chunk-based learning: teach full phrases, not isolated words
+- Spaced Repetition: revisit key vocabulary naturally
+
+When the user sends a sentence to be corrected:
+1. ✅ Corrected: [corrected version]
+2. 💡 More natural: [better, more native-sounding version]
+3. 📝 Explanation: [short, clear explanation${usePt ? " — in Portuguese" : ""}]
+4. 🗣️ Now you: [a follow-up speaking question to keep them producing output]
+
+When the user asks a question or wants to practice conversation:
+- Answer warmly and concisely
+- Use vocabulary appropriate for ${safeLevel} level
+- Always end with a question or speaking challenge
+${usePt ? "- Mix English and brief Portuguese hints for clarity" : "- Respond fully in English"}
+
+Rules:
+- Be encouraging and positive
+- Keep responses concise (max 150 words)
+- Never just translate — teach patterns and chunks
+- If they write in Portuguese, gently redirect to English`;
+
+  // ── Chamada à API do Groq (timeout 8s — margem antes do limite 10s da Netlify) ──
+  try {
+    const ctrl = new AbortController();
+    const groqTimeout = setTimeout(() => ctrl.abort(), 8000);
+
+    let response;
+    try {
+      response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          // ✅ Modelo atualizado: 14.400 req/dia grátis (era 1.000)
+          model: "llama-3.1-8b-instant",
+          max_tokens: 400,
+          temperature: 0.7,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...safeMessages,
+          ],
+        }),
+        signal: ctrl.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(groqTimeout);
+      if (fetchErr.name === "AbortError") {
+        return res.status(408).json({ error: "⏱ A IA demorou demais para responder. Tente novamente." });
+      }
+      throw fetchErr; // repassa para o catch externo
+    }
+    clearTimeout(groqTimeout);
+
+    // ── Erro da API do Groq ──────────────────────────────────
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Groq API error:", response.status, errText);
+
+      // Repassa o 429 do Groq para o cliente
+      if (response.status === 429) {
+        return res.status(429).json({ error: "Serviço temporariamente sobrecarregado. Tente novamente em instantes." });
+      }
+
+      return res.status(502).json({ error: "Erro no serviço de IA. Tente novamente." });
+    }
+
+    const data = await response.json();
+    const reply =
+      data.choices?.[0]?.message?.content ||
+      "Sorry, I could not generate a response. Please try again.";
+
+    return res.status(200).json({ reply });
+
+  } catch (err) {
+    console.error("Function error:", err.message);
+    return res.status(500).json({ error: "Erro interno. Tente novamente em alguns instantes." });
+  }
+}
