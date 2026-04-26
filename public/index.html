@@ -1576,9 +1576,9 @@ ${timerWidget("vocabulary")}
   <div style="display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap">
     <div style="flex:1;min-width:160px">
       <label style="font-size:12px;color:#888;display:block;margin-bottom:5px">Palavra ou frase em inglês</label>
-      <input class="inp" id="vocabCustomInp" placeholder="ex: pull off, break even..." value="${esc(S.vocabCustomWord)}" oninput="S.vocabCustomWord=this.value"/>
+      <input class="inp" id="vocabCustomInp" placeholder="ex: pull off, break even..." value="${esc(S.vocabCustomWord)}" oninput="S.vocabCustomWord=this.value;const _btn=document.getElementById('vocabCustomBtn');if(_btn)_btn.disabled=!this.value.trim();"/>
     </div>
-    <button class="btn btn-primary btn-sm" onclick="generateCustomVocab()" ${S.vocabCustomLoading||!S.vocabCustomWord.trim()?"disabled":""}>${S.vocabCustomLoading?"⏳...":"✦ Gerar tradução e exemplo"}</button>
+    <button id="vocabCustomBtn" class="btn btn-primary btn-sm" onclick="generateCustomVocab()" ${S.vocabCustomLoading||!S.vocabCustomWord.trim()?"disabled":""}>${S.vocabCustomLoading?"⏳...":"✦ Gerar tradução e exemplo"}</button>
   </div>
   ${S.vocabCustomResult?`
   <div style="margin-top:12px;background:#0c0c18;border-radius:10px;padding:14px;border:1px solid #2d2a40">
