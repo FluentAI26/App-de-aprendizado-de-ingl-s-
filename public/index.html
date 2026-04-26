@@ -1031,7 +1031,7 @@ ${S.lessonStep===2?`
 async function startLesson(topic){
   S.lessonTopic=topic; S.lessonStep=0; S.lessonData=null; S.lessonLoading=true; render();
   try{
-    const p=`Create a structured English lesson about "${topic}" for ${S.level} level. Return ONLY valid JSON:\n{"text":"[listening text 80-100 words]","vocab":[{"word":"...","pt":"...","sentence":"..."},{"word":"...","pt":"...","sentence":"..."},{"word":"...","pt":"...","sentence":"..."}],"speakPrompt":"[speaking question about ${topic}]"}`;
+    const p=`You are an EFL content creator. Create a structured English lesson about "${topic}" for ${S.level} level.\n\nCRITICAL RULES:\n- "text": ALWAYS in English, regardless of level. Adapt complexity but NEVER use Portuguese in the text.\n- "vocab": each "word" and "sentence" MUST be in English. "pt" is the Portuguese translation of the word only.\n- "sentence": one natural English example sentence using the word in context.\n- "speakPrompt": a question in English for the student to answer.\n\nVOCABULARY RULE: ${LV_VOCAB[S.level]}\n\nReturn ONLY valid JSON, no markdown, no explanation:\n{"text":"[80-100 word spoken-English passage about ${topic}]","vocab":[{"word":"[English word]","pt":"[Portuguese translation]","sentence":"[English example sentence]"},{"word":"...","pt":"...","sentence":"..."},{"word":"...","pt":"...","sentence":"..."}],"speakPrompt":"[English question about ${topic}]"}`;
     const r=await callAI([{role:"user",content:p}]);
     S.lessonData=JSON.parse(r.replace(/```json|```/g,"").trim());
   }catch(e){
@@ -1047,7 +1047,7 @@ async function submitLessonSpeaking(){
   if(!text||text.length<5) return;
   S.lessonLoading=true; render();
   try{
-    const p=`Student level: ${S.level}. Topic: "${S.lessonTopic}". Their answer: "${text}".\nProvide brief feedback:\n✅ Corrected: ...\n💡 More natural: ...\n🗣️ Well done! [encouragement]`;
+    const p=`You are an EFL teacher. Student level: ${S.level}. Topic: "${S.lessonTopic}".\nStudent wrote: "${text}"\n\nProvide feedback in this EXACT format:\n✅ Corrected: [corrected English sentence]\n💡 More natural: [more native-sounding English version]\n📝 Rule: [one grammar rule in ${LANG(S.level)}, max 1 sentence]\n🗣️ Your turn: [one follow-up question in English]\n\nIMPORTANT: Keep the corrected sentences in English. Use ${LANG(S.level)} only for the Rule explanation.`;
     S.lessonData.speakFeedback=await callAI([{role:"user",content:p}]);
   }catch(e){
     S.lessonData.speakFeedback=null;
@@ -1840,7 +1840,10 @@ async function sendAIMessage(){
   render();
   setTimeout(()=>{const ca=document.getElementById("chatArea");if(ca)ca.scrollTop=ca.scrollHeight;},50);
   try{
-    const reply=await callAI(S.aiHistory.slice(-14));
+    const reply=await callAI([
+      {role:"system",content:P_AI_COACH_SYSTEM(S.level)},
+      ...S.aiHistory.slice(-14)
+    ]);
     S.aiHistory.push({role:"assistant",content:reply});
   }catch(e){
     const aiErr=e.message||"❌ Erro de conexão. Tente novamente.";
