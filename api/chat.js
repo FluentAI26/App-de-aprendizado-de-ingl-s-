@@ -90,8 +90,8 @@ function sanitizeMessages(messages) {
     .slice(-10) // máximo 10 mensagens
     .filter(m => m && typeof m === "object")
     .map(m => ({
-      role: m.role === "assistant" ? "assistant" : "user",
-      content: String(m.content || "").substring(0, 500).trim(),
+      role: ["assistant", "system"].includes(m.role) ? m.role : "user",
+      content: String(m.content || "").substring(0, 2000).trim(), // system prompts são mais longos
     }))
     .filter(m => m.content.length > 0);
 }
@@ -158,34 +158,35 @@ export default async function handler(req, res) {
   ];
   const safeLevel = VALID_LEVELS.includes(level) ? level : "Beginner";
   const usePt = ["Beginner", "Basic"].includes(safeLevel);
+  const lang = usePt ? "Portuguese" : "English";
 
   // ── System prompt ────────────────────────────────────────────
-  const systemPrompt = `You are FluentAI, an expert English tutor for Brazilian Portuguese speakers focused on fast fluency. Student level: ${safeLevel}.
+  // Se o frontend já mandou um system message (ex: P_AI_COACH_SYSTEM, P_READING, P_VOCAB_GENERATE),
+  // o backend usa ele diretamente — não sobrescreve com o genérico.
+  // O system prompt do backend só é usado como fallback para chamadas sem system message.
+  const hasSystemMessage = safeMessages.some(m => m.role === "system");
 
-Your teaching method uses:
-- Comprehensible Input (i+1): always slightly above current level
-- Active Recall: ask questions that force memory retrieval
-- Output Hypothesis: always end with a speaking challenge
-- Chunk-based learning: teach full phrases, not isolated words
-- Spaced Repetition: revisit key vocabulary naturally
+  const fallbackSystemPrompt = `You are FluentAI Coach, an expert English teacher for Brazilian Portuguese speakers at ${safeLevel} level.
 
-When the user sends a sentence to be corrected:
-1. ✅ Corrected: [corrected version]
-2. 💡 More natural: [better, more native-sounding version]
-3. 📝 Explanation: [short, clear explanation${usePt ? " — in Portuguese" : ""}]
-4. 🗣️ Now you: [a follow-up speaking question to keep them producing output]
+CRITICAL LANGUAGE RULE:
+- ALWAYS respond primarily in English, regardless of student level
+- Use ${lang} ONLY for brief grammar explanations (1-2 sentences max)
+- NEVER use Portuguese as the main language of your response
+- If the student writes in Portuguese, respond in English and gently redirect
 
-When the user asks a question or wants to practice conversation:
-- Answer warmly and concisely
-- Use vocabulary appropriate for ${safeLevel} level
-- Always end with a question or speaking challenge
-${usePt ? "- Mix English and brief Portuguese hints for clarity" : "- Respond fully in English"}
-
-Rules:
-- Be encouraging and positive
+YOUR TEACHING STYLE:
+- Adapt vocabulary strictly to ${safeLevel}: ${safeLevel === "Beginner" || safeLevel === "Basic" ? "simple, common words only" : "natural, level-appropriate language"}
+- Always correct errors — never ignore mistakes
+- End EVERY response with a speaking challenge or follow-up question in English
 - Keep responses concise (max 150 words)
-- Never just translate — teach patterns and chunks
-- If they write in Portuguese, gently redirect to English`;
+
+WHEN STUDENT SENDS A SENTENCE TO CORRECT:
+1. ✅ Corrected: [fixed version in English]
+2. 💡 More natural: [native-sounding version in English]
+3. 📝 Rule: [grammar rule in ${lang}, max 2 sentences]
+4. 🗣️ Your turn: [follow-up question in English]
+
+NEVER give generic responses. NEVER translate entire sentences without teaching the pattern.`;
 
   // ── Chamada à API do Groq (timeout 8s — margem antes do limite 10s da Netlify) ──
   try {
@@ -205,10 +206,9 @@ Rules:
           model: "llama-3.1-8b-instant",
           max_tokens: 400,
           temperature: 0.7,
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...safeMessages,
-          ],
+          messages: hasSystemMessage
+            ? safeMessages  // frontend já mandou system message completo (P_AI_COACH_SYSTEM, etc.)
+            : [{ role: "system", content: fallbackSystemPrompt }, ...safeMessages],
         }),
         signal: ctrl.signal,
       });
