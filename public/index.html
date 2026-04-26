@@ -759,11 +759,11 @@ function P_READING_FEEDBACK(text,questions,answers,hints,level){
 }
 
 function P_VOCAB_GENERATE(topic,level){
-  return `You are an EFL vocabulary specialist creating flashcard content for ${level} learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nTOPIC: "${topic}"\n\nGenerate exactly 6 vocabulary items relevant to "${topic}" for ${level} level.\nMix: 3 single words + 3 multi-word expressions (chunks/phrasal verbs).\n\nFor each item:\n- "word": the English word or phrase\n- "pt": natural Brazilian Portuguese translation (not literal)\n- "sentence": one example sentence (follow vocabulary rule above)\n- "chunk": true if multi-word, false if single word\n- "tip": one very short memory tip or usage note in ${LANG(level)} (max 8 words)\n\nReturn ONLY valid JSON array. No markdown, no explanation:\n[{"word":"...","pt":"...","sentence":"...","chunk":false,"tip":"..."}]`;
+  return `You are an EFL vocabulary specialist creating flashcard content for ${level} learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nTOPIC: "${topic}" (if in Portuguese, use the English equivalent)\n\nGenerate exactly 6 vocabulary items relevant to "${topic}" for ${level} level.\nMix: 3 single words + 3 multi-word expressions (chunks/phrasal verbs).\n\nFor each item:\n- "word": the English word or phrase\n- "pt": natural Brazilian Portuguese translation (not literal)\n- "sentence": one example sentence in English (follow vocabulary rule above)\n- "sentencePt": Brazilian Portuguese translation of the sentence\n- "chunk": true if multi-word, false if single word\n- "tip": one very short memory tip or usage note in ${LANG(level)} (max 8 words)\n\nReturn ONLY valid JSON array. No markdown, no explanation:\n[{"word":"...","pt":"...","sentence":"...","sentencePt":"...","chunk":false,"tip":"..."}]`;
 }
 
 function P_VOCAB_CUSTOM(word,level){
-  return `You are an EFL teacher explaining the word/phrase "${word}" to a ${level} English learner.\n\nProvide:\n- "word": "${word}" (exact as given)\n- "pt": natural Brazilian Portuguese translation\n- "sentence": one example sentence (${LV_VOCAB[level].split(".")[0]})\n- "chunk": ${word.trim().includes(" ")}\n- "tip": one memory trick or common context in ${LANG(level)} (max 10 words)\n- "collocations": array of 2 common collocations or related phrases\n\nReturn ONLY valid JSON. No markdown:\n{"word":"...","pt":"...","sentence":"...","chunk":true/false,"tip":"...","collocations":["...","..."]}`;
+  return `You are an EFL teacher explaining the word/phrase "${word}" to a ${level} English learner.\n\nProvide:\n- "word": "${word}" (exact as given)\n- "pt": natural Brazilian Portuguese translation\n- "sentence": one example sentence in English (${LV_VOCAB[level].split(".")[0]})\n- "sentencePt": Brazilian Portuguese translation of the sentence\n- "chunk": ${word.trim().includes(" ")}\n- "tip": one memory trick or common context in ${LANG(level)} (max 10 words)\n- "collocations": array of 2 common collocations or related phrases\n\nReturn ONLY valid JSON. No markdown:\n{"word":"...","pt":"...","sentence":"...","sentencePt":"...","chunk":true/false,"tip":"...","collocations":["...","..."]}`;
 }
 
 function P_LISTENING_GENERATE(topic,level){
@@ -785,7 +785,7 @@ IMPORTANT: Output ONLY the passage text. Stop immediately after the last sentenc
 
 function P_AI_COACH_SYSTEM(level){
   const lang=LANG(level);
-  return `You are FluentAI Coach, an expert English teacher for Brazilian Portuguese speakers at ${level} level.\n\nYOUR TEACHING STYLE:\n- Always correct grammar and vocabulary mistakes — never ignore errors\n- Give ONE clear explanation per correction (not multiple at once)\n- Always provide an example sentence after explaining a rule\n- Use ${lang} for explanations, English for examples and exercises\n- End EVERY response with a speaking challenge or follow-up question\n- Adapt complexity strictly to ${level}: ${LV_VOCAB[level]}\n\nWHEN STUDENT SENDS A SENTENCE TO CORRECT:\n1. ✅ Corrected: [fixed version]\n2. 💡 More natural: [how a native would say it]\n3. 📝 Rule: [the grammar/vocabulary rule, in ${lang}, max 2 sentences]\n4. 🗣️ Your turn: [follow-up question on the same topic]\n\nWHEN STUDENT ASKS A QUESTION:\n- Answer directly and clearly\n- Give a concrete example immediately\n- Connect to real-life usage\n- End with a mini-exercise\n\nNEVER:\n- Give generic responses like "Great question!"\n- Translate entire sentences without teaching the pattern\n- Overwhelm with multiple rules at once\n- Use vocabulary above ${level} level without explanation`;
+  return `You are FluentAI Coach, an expert English teacher for Brazilian Portuguese speakers at ${level} level.\n\nYOUR TEACHING STYLE:\n- Always correct grammar and vocabulary mistakes — never ignore errors\n- Give ONE clear explanation per correction (not multiple at once)\n- Always provide an example sentence after explaining a rule\n- Use ${lang} for explanations, English for examples and exercises\n- End EVERY response with a speaking challenge or follow-up question\n- Adapt complexity strictly to ${level}: ${LV_VOCAB[level]}\n\nWHEN STUDENT SENDS A SENTENCE TO CORRECT:\n1. ✅ Corrected: [fixed version]\n2. 💡 More natural: [how a native would say it]\n3. 📝 Rule: [the grammar/vocabulary rule, in ${lang}, max 2 sentences]\n4. 🗣️ Your turn: [follow-up question in ENGLISH — always in English regardless of level, and DIFFERENT from the previous question]\n\nWHEN STUDENT ASKS A QUESTION:\n- Answer directly and clearly\n- Give a concrete example immediately\n- Connect to real-life usage\n- End with a mini-exercise\n\nNEVER:\n- Give generic responses like "Great question!"\n- Translate entire sentences without teaching the pattern\n- Overwhelm with multiple rules at once\n- Use vocabulary above ${level} level without explanation`;
 }
 
 const TABS=[
@@ -1001,15 +1001,16 @@ ${S.lessonStep===0?`
 </div>`:""}
 ${S.lessonStep===1?`
 <div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:12px">⊟ Vocabulário do tema</div>
+  <div style="font-size:14px;font-weight:600;margin-bottom:12px">⊟ Vocabulary</div>
   ${(S.lessonData.vocab||[]).map((v,i)=>`
-  <div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:#0c0c18;border-radius:10px;margin-bottom:7px;border:1px solid #1a1828">
+  <div style="display:flex;align-items:start;gap:10px;padding:10px 13px;background:#0c0c18;border-radius:10px;margin-bottom:7px;border:1px solid #1a1828">
     <div style="flex:1">
       <span style="color:#a78bfa;font-weight:600;font-size:13px">${v.word}</span>
       <span style="color:#6b7280;font-size:11px;margin-left:8px">— ${v.pt}</span>
-      <div style="font-size:12px;color:#888;font-style:italic;margin-top:3px">"${v.sentence}"</div>
+      <div style="font-size:12px;color:#c4b5fd;font-style:italic;margin-top:3px">"${v.sentence}"</div>
+      ${v.sentencePt?`<div style="font-size:11px;color:#6b7280;margin-top:2px">"${v.sentencePt}"</div>`:""}
     </div>
-    <button class="btn btn-secondary btn-sm" onclick="speak('${v.word.replace(/'/g,"\\'")}')">🔊</button>
+    <button class="btn btn-secondary btn-sm" style="flex-shrink:0" onclick="speak('${(v.sentence||v.word||"").replace(/'/g,"\\'")}')">🔊</button>
   </div>`).join("")}
   <button class="btn btn-success" style="margin-top:6px" onclick="S.lessonStep=2;render()">Avançar para Speaking →</button>
 </div>`:""}
@@ -1033,7 +1034,7 @@ ${S.lessonStep===2?`
 async function startLesson(topic){
   S.lessonTopic=topic; S.lessonStep=0; S.lessonData=null; S.lessonLoading=true; render();
   try{
-    const p=`You are an EFL content creator. Create a structured English lesson about "${topic}" for ${S.level} level.\n\nCRITICAL RULES:\n- "text": ALWAYS in English, regardless of level. Adapt complexity but NEVER use Portuguese in the text.\n- "vocab": each "word" and "sentence" MUST be in English. "pt" is the Portuguese translation of the word only.\n- "sentence": one natural English example sentence using the word in context.\n- "speakPrompt": a question in English for the student to answer.\n\nVOCABULARY RULE: ${LV_VOCAB[S.level]}\n\nReturn ONLY valid JSON, no markdown, no explanation:\n{"text":"[80-100 word spoken-English passage about ${topic}]","vocab":[{"word":"[English word]","pt":"[Portuguese translation]","sentence":"[English example sentence]"},{"word":"...","pt":"...","sentence":"..."},{"word":"...","pt":"...","sentence":"..."}],"speakPrompt":"[English question about ${topic}]"}`;
+    const p=`You are an EFL content creator. Create a structured English lesson about "${topic}" for ${S.level} level.\n\nCRITICAL RULES:\n- TOPIC LANGUAGE: The topic may be in Portuguese — always translate it to English before using it (e.g. "natação" → "swimming", "futebol" → "soccer").\n- "text": ALWAYS 100% in English. Never include Portuguese words in the text, even if the topic is in Portuguese.\n- "vocab": each "word" and "sentence" MUST be in English. "pt" is the Portuguese translation of the word only. "sentencePt" is the Portuguese translation of the sentence.\n- "speakPrompt": a question in English for the student to answer.\n\nVOCABULARY RULE: ${LV_VOCAB[S.level]}\n\nReturn ONLY valid JSON, no markdown, no explanation:\n{"text":"[80-100 word spoken-English passage]","vocab":[{"word":"[English word]","pt":"[PT translation of word]","sentence":"[English example sentence]","sentencePt":"[PT translation of sentence]"},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."}],"speakPrompt":"[English question about the topic]"}`;
     const r=await callAI([{role:"user",content:p}]);
     S.lessonData=JSON.parse(r.replace(/```json|```/g,"").trim());
   }catch(e){
@@ -1049,7 +1050,7 @@ async function submitLessonSpeaking(){
   if(!text||text.length<5) return;
   S.lessonLoading=true; render();
   try{
-    const p=`You are an EFL teacher. Student level: ${S.level}. Topic: "${S.lessonTopic}".\nStudent wrote: "${text}"\n\nProvide feedback in this EXACT format:\n✅ Corrected: [corrected English sentence]\n💡 More natural: [more native-sounding English version]\n📝 Rule: [one grammar rule in ${LANG(S.level)}, max 1 sentence]\n🗣️ Your turn: [one follow-up question in English]\n\nIMPORTANT: Keep the corrected sentences in English. Use ${LANG(S.level)} only for the Rule explanation.`;
+    const p=`You are an EFL teacher. Student level: ${S.level}. Topic: "${S.lessonTopic}".\nOriginal prompt given to student: "${S.lessonData.speakPrompt}"\nStudent wrote: "${text}"\n\nProvide feedback in this EXACT format:\n✅ Corrected: [corrected English sentence]\n💡 More natural: [more native-sounding English version]\n📝 Rule: [one grammar rule in ${LANG(S.level)}, max 1 sentence]\n🗣️ Your turn: [a NEW follow-up question in English — different from the original prompt, advancing the conversation about ${S.lessonTopic}]\n\nIMPORTANT: The "Your turn" must be a different question that goes deeper into the topic. Never repeat the original prompt.`;
     S.lessonData.speakFeedback=await callAI([{role:"user",content:p}]);
   }catch(e){
     S.lessonData.speakFeedback=null;
@@ -1599,7 +1600,8 @@ ${timerWidget("vocabulary")}
     ${card.cat?`<div style="font-size:11px;color:#444;margin-top:8px">${card.cat}</div>`:""}
   `:`
     <div style="font-size:13px;color:#f59e0b;font-weight:700;margin-bottom:6px">🇧🇷 ${card.pt}</div>
-    <div style="font-size:14px;color:#d1d5db;font-style:italic;margin-bottom:8px">"${card.sentence}"</div>
+    <div style="font-size:14px;color:#c4b5fd;font-style:italic;margin-bottom:4px">"${card.sentence}"</div>
+    ${card.sentencePt?`<div style="font-size:12px;color:#6b7280;font-style:italic;margin-bottom:8px">"${card.sentencePt}"</div>`:""}
     ${card.tip?`<div style="font-size:11px;color:#7c3aed;background:#1a1630;padding:4px 10px;border-radius:6px;margin-bottom:6px">💡 ${card.tip}</div>`:""}
     <div style="font-size:11px;color:#555">Clique para voltar</div>
   `}
@@ -1614,7 +1616,7 @@ ${timerWidget("vocabulary")}
 </div>
 <div style="display:flex;gap:9px;margin-bottom:20px">
   <button class="btn btn-secondary" onclick="nextVocabCard()">→ Pular</button>
-  <button class="btn btn-secondary" onclick="speak('${card.word.replace(/'/g,"\\'")}')">🔊 Ouvir</button>
+  <button class="btn btn-secondary" onclick="speak('${(card.sentence||card.word).replace(/'/g,"\\'")}')">🔊 Ouvir</button>
   <button class="btn btn-secondary btn-sm" onclick="sendChunkToAI('${card.word.replace(/'/g,"\\'")}')">Praticar ✦</button>
 </div>
 <div class="card">
