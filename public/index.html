@@ -846,9 +846,9 @@ function topicSelector(selKey,customKey,placeholder){
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
     <input class="inp" id="inp_${customKey}" style="flex:1" placeholder="${placeholder}" value="${esc(S[customKey])}"
-      oninput="S['${customKey}']=this.value;if(this.value.trim())S['${selKey}']='';render();"/>
+      oninput="S['${customKey}']=this.value;if(this.value.trim())S['${selKey}']='';const _lbl=document.getElementById('lbl_${customKey}');const _val=this.value.trim();if(_lbl)_lbl.innerHTML=_val?'Tema selecionado: <strong>'+_val+'</strong>':'';"/>
   </div>
-  ${active?`<div style="font-size:12px;color:#a78bfa;margin-bottom:8px">Tema selecionado: <strong>${active}</strong></div>`:""}`;
+  <div id="lbl_${customKey}" style="font-size:12px;color:#a78bfa;margin-bottom:8px">${active?`Tema selecionado: <strong>${active}</strong>`:""}</div>`;
 }
 
 function renderDashboard(){
