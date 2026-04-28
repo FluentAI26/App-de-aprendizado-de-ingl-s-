@@ -505,6 +505,7 @@ function saveState(){
   }
 }
 
+function cleanJson(s){ return s.replace(/`+json|`+/g,"").trim(); }
 function showToast(msg,color,duration){
   const existing=document.getElementById("fluentai-toast");
   if(existing) existing.remove();
@@ -839,14 +840,22 @@ function timerWidget(tabKey){
   </div>`;
 }
 
-function topicSelector(selKey,customKey,placeholder){
+function topicSelector(selKey,customKey,placeholder,genBtnId){
   const active=getActiveTopic(selKey,customKey);
   return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
     ${TOPICS.map(t=>`<button class="topic-btn${S[selKey]===t&&!S[customKey].trim()?" sel":""}" onclick="S['${selKey}']='${t}';S['${customKey}']='';const inp=document.getElementById('inp_${customKey}');if(inp)inp.value='';render()">${t}</button>`).join("")}
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
     <input class="inp" id="inp_${customKey}" style="flex:1" placeholder="${placeholder}" value="${esc(S[customKey])}"
-      oninput="S['${customKey}']=this.value;if(this.value.trim())S['${selKey}']='';const _lbl=document.getElementById('lbl_${customKey}');const _val=this.value.trim();if(_lbl)_lbl.innerHTML=_val?'Tema selecionado: <strong>'+_val+'</strong>':'';"/>
+      oninput="
+        S['${customKey}']=this.value;
+        if(this.value.trim()) S['${selKey}']='';
+        const _lbl=document.getElementById('lbl_${customKey}');
+        const _val=this.value.trim();
+        if(_lbl) _lbl.innerHTML=_val?'Tema selecionado: <strong>'+_val+'</strong>':'';
+        const _btn=document.getElementById('${genBtnId||''}');
+        if(_btn){ _btn.disabled=!_val&&!S['${selKey}']; const _sp=_btn.querySelector('span.topic-label'); if(_sp&&_val) _sp.textContent=_val; }
+      "/>
   </div>
   <div id="lbl_${customKey}" style="font-size:12px;color:#a78bfa;margin-bottom:8px">${active?`Tema selecionado: <strong>${active}</strong>`:""}</div>`;
 }
@@ -1036,7 +1045,7 @@ async function startLesson(topic){
   try{
     const p=`You are an EFL content creator. Create a structured English lesson about "${topic}" for ${S.level} level.\n\nCRITICAL RULES:\n- TOPIC LANGUAGE: The topic may be in Portuguese — always translate it to English before using it (e.g. "natação" → "swimming", "futebol" → "soccer").\n- "text": ALWAYS 100% in English. Never include Portuguese words in the text, even if the topic is in Portuguese.\n- "vocab": each "word" and "sentence" MUST be in English. "pt" is the Portuguese translation of the word only. "sentencePt" is the Portuguese translation of the sentence.\n- "speakPrompt": a question in English for the student to answer.\n\nVOCABULARY RULE: ${LV_VOCAB[S.level]}\n\nReturn ONLY valid JSON, no markdown, no explanation:\n{"text":"[80-100 word spoken-English passage]","vocab":[{"word":"[English word]","pt":"[PT translation of word]","sentence":"[English example sentence]","sentencePt":"[PT translation of sentence]"},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."}],"speakPrompt":"[English question about the topic]"}`;
     const r=await callAI([{role:"user",content:p}]);
-    S.lessonData=JSON.parse(r.replace(/```json|```/g,"").trim());
+    S.lessonData=JSON.parse(cleanJson(r));
   }catch(e){
     S.lessonData={text:e.message||"Erro ao gerar lição.",vocab:[],speakPrompt:"Describe what you know about "+topic};
     showToast(e.message||"Erro ao gerar lição. Tente novamente.","#f87171");
@@ -1050,7 +1059,7 @@ async function submitLessonSpeaking(){
   if(!text||text.length<5) return;
   S.lessonLoading=true; render();
   try{
-    const p=`You are an EFL teacher. Student level: ${S.level}. Topic: "${S.lessonTopic}".\nOriginal prompt given to student: "${S.lessonData.speakPrompt}"\nStudent wrote: "${text}"\n\nProvide feedback in this EXACT format:\n✅ Corrected: [corrected English sentence]\n💡 More natural: [more native-sounding English version]\n📝 Rule: [one grammar rule in ${LANG(S.level)}, max 1 sentence]\n🗣️ Your turn: [a NEW follow-up question in English — different from the original prompt, advancing the conversation about ${S.lessonTopic}]\n\nIMPORTANT: The "Your turn" must be a different question that goes deeper into the topic. Never repeat the original prompt.`;
+    const p=`You are an EFL teacher. Student level: ${S.level}. Topic: "${S.lessonTopic}".\n\nThe student was asked this question: "${S.lessonData.speakPrompt}"\nThe student's response was: "${text}"\n\nYour task is to correct ONLY the student's response, not the question.\nIf the student's response is very short or unclear, give a model answer and explain.\n\nProvide feedback in this EXACT format:\n✅ Corrected: [corrected version of the student's response in English]\n💡 More natural: [how a native speaker would say the student's idea]\n📝 Rule: [one grammar rule in ${LANG(S.level)}, max 1 sentence]\n🗣️ Your turn: [a NEW follow-up question in English about ${S.lessonTopic} — different from the original question]\n\nNEVER correct or rewrite the original question. ONLY correct the student's response.`;
     S.lessonData.speakFeedback=await callAI([{role:"user",content:p}]);
   }catch(e){
     S.lessonData.speakFeedback=null;
@@ -1089,10 +1098,10 @@ function renderListening(){
 ${timerWidget("listening")}
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar conteúdo por tema com IA</div>
-  ${topicSelector("lisTopic","lisTopicCustom","Ou digite qualquer tema... ex: viagem de férias, entrevista de emprego")}
+  ${topicSelector("lisTopic","lisTopicCustom","Ou digite qualquer tema... ex: viagem de férias, entrevista de emprego","lisGenBtn")}
   <div style="display:flex;gap:9px;flex-wrap:wrap">
-    <button class="btn btn-primary" onclick="generateListening()" ${S.genLoading||!getActiveTopic("lisTopic","lisTopicCustom")?"disabled":""}>
-      ${S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(getActiveTopic("lisTopic","lisTopicCustom")||"...")}
+    <button id="lisGenBtn" class="btn btn-primary" onclick="generateListening()" ${S.genLoading||!getActiveTopic("lisTopic","lisTopicCustom")?"disabled":""}>
+      ${S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre <span class='topic-label'>"+(getActiveTopic("lisTopic","lisTopicCustom")||"...")+"</span>"}
     </button>
     ${getActiveTopic("lisTopic","lisTopicCustom")?`<button class="btn btn-secondary" onclick="S.lisTopic='';S.lisTopicCustom='';S.genListening=null;S.genListeningText='';S.genListeningQs=[];S.lisAnswers={};S.lisFeedback=null;render()">✕ Limpar</button>`:""}
   </div>
@@ -1118,39 +1127,7 @@ ${timerWidget("listening")}
   ${S.lisFeedback?`<div class="success-box"><div style="color:#6ee7b7;font-weight:700;margin-bottom:6px;font-size:13px">✓ Feedback:</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:#d1fae5">${esc(S.lisFeedback)}</div></div>`:`<button class="btn btn-primary btn-sm" onclick="checkListeningAnswers()" ${S.lisAnsLoading?"disabled":""}>${S.lisAnsLoading?"⏳...":"Verificar respostas"}</button>`}
   `:""}
   `:""}
-</div>
-${items.map(item=>`
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-    <div><div style="font-size:15px;font-weight:600;margin-bottom:4px">${item.title}</div><span class="badge badge-purple">${item.accent} English</span></div>
-    <span class="badge badge-green">${S.level}</span>
-  </div>
-  ${S.selListening===item.id?`
-    <div class="text-box">${item.text}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-      ${speeds.map(sp=>`<button class="speed-btn${S.lisSpeed===sp?" sel":""}" onclick="S.lisSpeed=${sp};render()">${sp}x</button>`).join("")}
-      <button class="btn btn-primary btn-sm" onclick="speak('${item.text.replace(/'/g,"\\'").replace(/\n/g," ")}',S.lisSpeed)">🔊 Ouvir</button>
-      <button class="btn btn-secondary btn-sm" onclick="speak('${item.text.replace(/'/g,"\\'").replace(/\n/g," ")}',S.lisSpeed)">↺ Shadow</button>
-    </div>
-    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px">
-      ${[{k:"heard",l:"Ouvi"},{k:"repeated",l:"Repeti"},{k:"understood",l:"Entendi"}].map(c=>`
-      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px">
-        <input type="checkbox" ${(S.lisChecksMap[item.id]||{})[c.k]?"checked":""} onchange="if(!S.lisChecksMap[${item.id}])S.lisChecksMap[${item.id}]={};S.lisChecksMap[${item.id}]['${c.k}']=this.checked;const m=S.lisChecksMap[${item.id}];if(m.heard&&m.repeated&&m.understood)completeTask('listening')" style="accent-color:#7c3aed"/>
-        ${c.l}
-      </label>`).join("")}
-    </div>
-    ${item.questions?`<p style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:9px">Perguntas de compreensão:</p>
-    <div style="display:flex;flex-direction:column;gap:7px">
-      ${item.questions.map((q,i)=>`<div style="background:#0c0c18;border-radius:8px;padding:10px 12px"><p style="font-size:12px;color:#c4b5fd">${i+1}. ${q}</p></div>`).join("")}
-    </div>`:""}
-  `:`
-    <p style="font-size:13px;color:#6b7280;margin-bottom:14px">${item.text.substring(0,100)}...</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="S.selListening=${item.id};completeTask('listening');render()">▶ Abrir</button>
-      <button class="btn btn-secondary" onclick="S.selListening=${item.id};render()">Ver transcrição</button>
-    </div>
-  `}
-</div>`).join("")}`;
+</div>`;
 }
 
 async function generateListening(){
@@ -1161,7 +1138,7 @@ async function generateListening(){
     const reply=await callAI([{role:"user",content:P_LISTENING_GENERATE(topic,S.level)}]);
     S.genListening=reply.trim(); S.genListeningText=reply.trim();
     try{
-      S.genListeningQs=JSON.parse((await callAI([{role:"user",content:P_READING_QUESTIONS(S.genListeningText,S.level)}])).replace(/```json|```/g,"").trim());
+      S.genListeningQs=JSON.parse(cleanJson(await callAI([{role:"user",content:P_READING_QUESTIONS(S.genListeningText,S.level)}])));
     }catch(e){ S.genListeningQs=[]; }
   }catch(e){
     S.genListening=null; S.genListeningText="";
@@ -1197,9 +1174,9 @@ function renderSpeaking(){
 ${timerWidget("speaking")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar prompts por tema</div>
-  ${topicSelector("speakTopic","speakTopicCustom","Ou digite seu tema... ex: minha rotina de trabalho, férias nos EUA")}
-  <button class="btn btn-primary btn-sm" onclick="generateSpeakPrompts()" ${S.speakGenLoading||!getActiveTopic("speakTopic","speakTopicCustom")?"disabled":""}>
-    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompts sobre "+(getActiveTopic("speakTopic","speakTopicCustom")||"...")}
+  ${topicSelector("speakTopic","speakTopicCustom","Ou digite seu tema... ex: minha rotina de trabalho, férias nos EUA","speakGenBtn")}
+  <button id="speakGenBtn" class="btn btn-primary btn-sm" onclick="generateSpeakPrompts()" ${S.speakGenLoading||!getActiveTopic("speakTopic","speakTopicCustom")?"disabled":""}>
+    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompts sobre <span class='topic-label'>"+(getActiveTopic("speakTopic","speakTopicCustom")||"...")+"</span>"}
   </button>
   ${S.speakGenPrompts.length>0?`<div style="margin-top:8px;font-size:12px;color:#6ee7b7">✓ ${S.speakGenPrompts.length} prompts gerados sobre "${getActiveTopic("speakTopic","speakTopicCustom")}"!</div>`:""}
 </div>
@@ -1258,7 +1235,7 @@ async function generateSpeakPrompts(){
   S.speakGenLoading=true; render();
   try{
     const p=`Generate 5 speaking prompts about "${topic}" for ${S.level} English level. Return ONLY JSON array of 5 strings.`;
-    S.speakGenPrompts=JSON.parse((await callAI([{role:"user",content:p}])).replace(/```json|```/g,"").trim());
+    S.speakGenPrompts=JSON.parse(cleanJson(await callAI([{role:"user",content:p}])));
     S.speakRound=0;
   }catch(e){ showToast(e.message||"Erro ao gerar prompts. Tente novamente.","#f87171"); }
   S.speakGenLoading=false; render();
@@ -1419,8 +1396,8 @@ function renderReading(){
 ${timerWidget("reading")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar texto por tema com IA</div>
-  ${topicSelector("readTopic","readTopicCustom","Ou digite qualquer tema... ex: inteligência artificial, gastronomia")}
-  <button class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(topic||"...")}</button>
+  ${topicSelector("readTopic","readTopicCustom","Ou digite qualquer tema... ex: inteligência artificial, gastronomia","readGenBtn")}
+  <button id="readGenBtn" class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre <span class='topic-label'>"+(topic||"...")+"</span>"}</button>
   ${topic?`<button class="btn btn-secondary btn-sm" onclick="S.readTopic='';S.readTopicCustom='';S.genReading=null;S.genReadingQs=[];S.genReadingAnswers={};S.genReadingFeedback=null;render()" style="margin-left:8px">✕ Limpar</button>`:""}
   ${S.genReading?`
   <div style="margin-top:14px">
@@ -1436,42 +1413,7 @@ ${timerWidget("reading")}
     ${S.genReadingFeedback?`<div style="margin-top:10px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback:</div>${renderReadingFeedback(S.genReadingFeedback)}</div>`:`<button class="btn btn-primary btn-sm" onclick="submitGenReading()" ${S.genReadingFeedbackLoading?"disabled":""}>${S.genReadingFeedbackLoading?"⏳...":"Verificar respostas"}</button>`}
     `:""}
   </div>`:""}
-</div>
-${item?`
-<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
-  ${items.map((it,i)=>`<button class="btn btn-${i===idx?"primary":"secondary"} btn-sm" onclick="S.readIdx=${i};S.selReading=null;S.readAnswers={};S.readFeedback=null;render()">${i+1}. ${it.title}</button>`).join("")}
-</div>
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div style="font-size:15px;font-weight:600">${item.title}</div>
-    <span class="badge badge-green">${S.level}</span>
-  </div>
-  ${S.selReading===item.id?`
-    <button class="btn btn-secondary btn-sm" style="margin-bottom:10px" onclick="speak('${(item.text||"").replace(/'/g,"\\'").replace(/\n/g," ")}')">🔊 Ouvir</button>
-    <div style="font-size:11px;color:#6b7280;margin-bottom:8px">💡 Clique em qualquer palavra para ver a tradução</div>
-    <div class="text-box" id="readTextBox" style="cursor:pointer">${makeClickableText(item.text)}</div>
-    ${S.clickedWord?`<div style="background:#1a1630;border:1px solid #3d1d6b;border-radius:9px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
-      <div style="flex:1"><span style="color:#a78bfa;font-weight:700;font-size:14px">${S.clickedWord}</span><span style="color:#888;font-size:12px;margin-left:8px">→</span><span style="color:#f59e0b;font-size:13px;margin-left:8px">${S.clickedWordTrans||"..."}</span></div>
-      <button class="btn btn-secondary btn-sm" onclick="speak('${(S.clickedWord||"").replace(/'/g,"\\'")}')">🔊</button>
-      <button style="background:none;border:none;color:#555;cursor:pointer;font-size:16px" onclick="S.clickedWord=null;S.clickedWordTrans=null;render()">✕</button>
-    </div>`:""}
-    <p style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:9px">Perguntas de compreensão:</p>
-    <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">
-      ${item.questions.map((q,i)=>`<div><p style="font-size:13px;color:#c4b5fd;margin-bottom:5px">${i+1}. ${q}</p><input class="inp" placeholder="Your answer..." value="${esc(S.readAnswers[i]||"")}" oninput="S.readAnswers[${i}]=this.value"/></div>`).join("")}
-    </div>
-    ${S.readFeedback?`<div style="margin-top:2px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback:</div>${renderReadingFeedback(S.readFeedback)}${idx<items.length-1?`<button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="S.readIdx=${idx+1};S.selReading=null;S.readAnswers={};S.readFeedback=null;render()">→ Próximo</button>`:`<p style="font-size:12px;color:#6b7280;margin-top:8px">✓ Todos os textos concluídos!</p>`}</div>`:`
-    <div style="display:flex;gap:9px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="submitReading()" ${S.readLoading?"disabled":""}>${S.readLoading?"⏳...":"Verificar com IA"}</button>
-      <button class="btn btn-secondary" onclick="S.readFeedback='Concluído!';completeTask('reading');render()">Concluir sem verificar</button>
-    </div>`}
-  `:`
-    <p style="font-size:13px;color:#6b7280;margin-bottom:14px">${item.text.substring(0,120)}...</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="S.selReading=${item.id};S.readAnswers={};S.readFeedback=null;render()">Ler & responder</button>
-      <button class="btn btn-secondary" onclick="S.selReading=${item.id};speak('${(item.text||"").replace(/'/g,"\\'").replace(/\n/g," ")}');completeTask('reading');render()">🔊 Ler em voz alta</button>
-    </div>
-  `}
-</div>`:""}`;
+</div>`;
 }
 
 function renderReadingFeedback(raw){
@@ -1505,7 +1447,7 @@ async function generateReading(){
   try{
     S.genReading=(await callAI([{role:"user",content:P_READING(topic,S.level)}])).trim();
     try{
-      S.genReadingQs=JSON.parse((await callAI([{role:"user",content:P_READING_QUESTIONS(S.genReading,S.level)}])).replace(/```json|```/g,"").trim());
+      S.genReadingQs=JSON.parse(cleanJson(await callAI([{role:"user",content:P_READING_QUESTIONS(S.genReading,S.level)}])));
     }catch(e){ S.genReadingQs=[]; }
     completeTask("reading");
   }catch(e){
@@ -1568,8 +1510,8 @@ function renderVocab(){
 ${timerWidget("vocabulary")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar vocabulário por tema</div>
-  ${topicSelector("vocabTopic","vocabTopicCustom","Ou digite qualquer tema... ex: reuniões de trabalho, culinária")}
-  <button class="btn btn-primary btn-sm" onclick="generateVocab()" ${S.vocabGenLoading||!getActiveTopic("vocabTopic","vocabTopicCustom")?"disabled":""}>${S.vocabGenLoading?"⏳...":"✦ Gerar sobre "+(getActiveTopic("vocabTopic","vocabTopicCustom")||"...")}</button>
+  ${topicSelector("vocabTopic","vocabTopicCustom","Ou digite qualquer tema... ex: reuniões de trabalho, culinária","vocabGenBtn")}
+  <button id="vocabGenBtn" class="btn btn-primary btn-sm" onclick="generateVocab()" ${S.vocabGenLoading||!getActiveTopic("vocabTopic","vocabTopicCustom")?"disabled":""}>${S.vocabGenLoading?"⏳...":"✦ Gerar sobre <span class='topic-label'>"+(getActiveTopic("vocabTopic","vocabTopicCustom")||"...")+"</span>"}</button>
   ${(S.vocabGenWords||[]).length>0?`<span style="font-size:12px;color:#6ee7b7;margin-left:10px">+${S.vocabGenWords.length} palavras adicionadas!</span>`:""}
 </div>
 <div class="card" style="margin-bottom:14px">
@@ -1585,10 +1527,11 @@ ${timerWidget("vocabulary")}
   <div style="margin-top:12px;background:#0c0c18;border-radius:10px;padding:14px;border:1px solid #2d2a40">
     <div style="font-size:15px;font-weight:700;color:#a78bfa;margin-bottom:4px">${S.vocabCustomResult.word}</div>
     <div style="font-size:13px;color:#f59e0b;margin-bottom:6px">🇧🇷 ${S.vocabCustomResult.pt}</div>
-    <div style="font-size:13px;color:#888;font-style:italic;margin-bottom:12px">"${S.vocabCustomResult.sentence}"</div>
+    <div style="font-size:13px;color:#c4b5fd;font-style:italic;margin-bottom:4px">"${S.vocabCustomResult.sentence}"</div>
+    ${S.vocabCustomResult.sentencePt?`<div style="font-size:12px;color:#6b7280;margin-bottom:12px">"${S.vocabCustomResult.sentencePt}"</div>`:'<div style="margin-bottom:12px"></div>'}
     <div style="display:flex;gap:8px">
       <button class="btn btn-success btn-sm" onclick="addCustomVocab()">✓ Adicionar ao meu banco</button>
-      <button class="btn btn-secondary btn-sm" onclick="speak('${(S.vocabCustomResult.word||"").replace(/'/g,"\\'")}')">🔊 Ouvir</button>
+      <button class="btn btn-secondary btn-sm" onclick="speak('${(S.vocabCustomResult.sentence||S.vocabCustomResult.word||"").replace(/'/g,"\\'")}')">🔊 Ouvir</button>
       <button class="btn btn-secondary btn-sm" onclick="S.vocabCustomResult=null;S.vocabCustomWord='';render()">✕</button>
     </div>
   </div>`:""}
@@ -1657,7 +1600,7 @@ function checkCtxAnswer(word,sentence){
 function flipCard(){
   S.vocabFlipped=!S.vocabFlipped;
   S.vocabCtxAnswer=""; S.vocabCtxFeedback=null;
-  if(S.vocabFlipped){ const list=getAllVocab(); const card=list[S.vocabIdx%list.length]; if(card) speak(card.word); }
+  if(S.vocabFlipped){ const list=getAllVocab(); const card=list[S.vocabIdx%list.length]; if(card) speak(card.sentence||card.word); }
   render();
 }
 function nextVocabCard(){ const l=getAllVocab(); S.vocabIdx=(S.vocabIdx+1)%Math.max(1,l.length); S.vocabFlipped=false; S.vocabCtxAnswer=""; S.vocabCtxFeedback=null; render(); }
@@ -1726,7 +1669,7 @@ async function generateVocab(){
   if(!topic||S.vocabGenLoading) return;
   S.vocabGenLoading=true; render();
   try{
-    const parsed=JSON.parse((await callAI([{role:"user",content:P_VOCAB_GENERATE(topic,S.level)}])).replace(/```json|```/g,"").trim());
+    const parsed=JSON.parse(cleanJson(await callAI([{role:"user",content:P_VOCAB_GENERATE(topic,S.level)}])));
     S.vocabGenWords=[...(S.vocabGenWords||[]),...parsed.map((w,i)=>({...w,id:7000+Date.now()+i,cat:topic}))];
   }catch(e){ showToast(e.message||"Erro ao gerar vocabulário. Tente novamente.","#f87171"); }
   S.vocabGenLoading=false; render();
@@ -1737,7 +1680,7 @@ async function generateCustomVocab(){
   if(!word||S.vocabCustomLoading) return;
   S.vocabCustomLoading=true; render();
   try{
-    S.vocabCustomResult=JSON.parse((await callAI([{role:"user",content:P_VOCAB_CUSTOM(word,S.level)}])).replace(/```json|```/g,"").trim());
+    S.vocabCustomResult=JSON.parse(cleanJson(await callAI([{role:"user",content:P_VOCAB_CUSTOM(word,S.level)}])));
   }catch(e){ showToast(e.message||"Erro ao gerar palavra. Tente novamente.","#f87171"); }
   S.vocabCustomLoading=false; render();
 }
