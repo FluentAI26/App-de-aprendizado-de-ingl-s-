@@ -451,7 +451,6 @@ function loadState(){
       showToast("⚠️ Dados salvos corrompidos — progresso recente pode ter sido perdido.","#f87171");
     }
     if(parsed && typeof parsed==="object"){
-      // campos críticos: só mescla se forem do tipo esperado
       const critical={
         userName:"string", level:"string", xp:"number", streak:"number",
         totalDays:"number", lastStudyDate:"string", goalMonths:"number",
@@ -461,7 +460,6 @@ function loadState(){
       for(const[k,type] of Object.entries(critical)){
         if(parsed[k]!==undefined && typeof parsed[k]===type) safe[k]=parsed[k];
       }
-      // objetos e arrays: valida minimamente antes de aceitar
       if(parsed.mission && typeof parsed.mission==="object" && !Array.isArray(parsed.mission)) safe.mission=parsed.mission;
       if(parsed.scores && typeof parsed.scores==="object" && !Array.isArray(parsed.scores)) safe.scores=parsed.scores;
       if(parsed.vocabSRS && typeof parsed.vocabSRS==="object" && !Array.isArray(parsed.vocabSRS)) safe.vocabSRS=parsed.vocabSRS;
@@ -472,7 +470,6 @@ function loadState(){
       if(Array.isArray(parsed.aiHistory)) safe.aiHistory=parsed.aiHistory;
       if(Array.isArray(parsed.vocabGenWords)) safe.vocabGenWords=parsed.vocabGenWords;
       if(parsed.lisChecksMap && typeof parsed.lisChecksMap==="object") safe.lisChecksMap=parsed.lisChecksMap;
-      // demais campos simples: mescla direto
       Object.assign(S, parsed, safe);
     }
   }
@@ -489,7 +486,6 @@ function saveState(){
     localStorage.setItem("fluentai_v4",JSON.stringify(S));
   }catch(e){
     if(e instanceof DOMException && (e.name==="QuotaExceededError"||e.name==="NS_ERROR_DOM_QUOTA_REACHED")){
-      // tenta liberar espaço limpando cache de conteúdo gerado pela IA (não é progresso do usuário)
       const keys=["genListening","genListeningText","genListeningQs","genReading","genReadingQs",
                   "lessonData","speakGenPrompts","vocabCustomResult","lisFeedback","readFeedback",
                   "genReadingFeedback","speakFeedback","clickedWordTrans"];
@@ -517,28 +513,23 @@ function showToast(msg,color,duration){
   setTimeout(()=>t.remove(), duration||4000);
 }
 
-// Centralised day-boundary check — called on load, on render, and every 60s
-// Handles: streak break, mission reset, session reset when date changes
 let _lastCheckedDate = "";
 function checkDayReset(){
   const today = new Date().toDateString();
-  if(_lastCheckedDate === today) return; // already checked this calendar day
+  if(_lastCheckedDate === today) return;
   _lastCheckedDate = today;
 
-  // ── streak: break if last study was 2+ days ago ──
   if(S.lastStudyDate && S.lastStudyDate !== today){
     const diff = Math.floor((new Date() - new Date(S.lastStudyDate)) / 864e5);
     if(diff > 1 && S.streak > 0){
       S.streak = 0;
       saveState();
-      // only show toast if page is already fully loaded (not on initial boot)
       if(document.getElementById("content")?.classList.contains("ready")){
         showToast("💔 Seu streak foi zerado — você não estudou ontem. Recomece hoje!","#f87171",5000);
       }
     }
   }
 
-  // ── mission + session: reset when date flips ──
   if(S.missionDate !== today){
     S.mission = {listening:false,reading:false,speaking:false,vocabulary:false};
     S.missionDate = today;
@@ -546,7 +537,6 @@ function checkDayReset(){
     S.sessionTime = {listening:0,reading:0,speaking:0,vocabulary:0};
     S.sessionAccum = {listening:0,reading:0,speaking:0,vocabulary:0};
     saveState();
-    // notify user only if app was already open (not fresh load)
     if(document.getElementById("content")?.classList.contains("ready")){
       showToast("🌅 Novo dia! Missão de hoje reiniciada. Bora estudar?","#a78bfa",4000);
       render();
@@ -574,13 +564,12 @@ function addXP(n){
   S.xp+=n;
   const today=new Date().toDateString();
   if(S.lastStudyDate!==today){
-    // first activity of the day: increment streak (only if studied yesterday or first ever)
     const last=S.lastStudyDate?new Date(S.lastStudyDate):null;
     const diff=last?Math.floor((new Date()-last)/864e5):99;
-    S.streak=diff<=1?S.streak+1:1; // +1 if consecutive, restart to 1 if gap
+    S.streak=diff<=1?S.streak+1:1;
     S.lastStudyDate=today;
     S.totalDays++;
-    _lastCheckedDate=today; // sync so checkDayReset() doesn't run again this day
+    _lastCheckedDate=today;
   }
   document.getElementById("xpVal").textContent=S.xp;
   document.getElementById("streakVal").textContent=S.streak;
@@ -622,9 +611,8 @@ function speakWithCallback(text,rate,onEnd){
 
 function startShadow(text,rate){
   if(!synth||!text) return;
-  S.shadowActive=false; render(); // reset any previous shadow state
+  S.shadowActive=false; render();
   speakWithCallback(text, rate, ()=>{
-    // audio finished — show 3-second countdown then cue
     S.shadowActive=true; S.shadowCountdown=3; render();
     const iv=setInterval(()=>{
       S.shadowCountdown--;
@@ -744,8 +732,13 @@ const LV_TOPICS={
   Advanced:"philosophy, epistemology, institutional analysis, policy critique, abstract reasoning",
 };
 
+// ─────────────────────────────────────────────────────────────
+// PROMPTS
+// ─────────────────────────────────────────────────────────────
+
+// [FIX P18-ext] P_READING: added PT→EN topic translation instruction
 function P_READING(topic,level){
-  return `You are an expert EFL content writer creating reading material for ${level} English learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nTOPIC AREA: ${LV_TOPICS[level]}\nREQUESTED TOPIC: "${topic}"\n\nWrite a reading passage of exactly 100-130 words about "${topic}".\nRules:\n- Every sentence must be clear and natural\n- Repeat 2-3 key words from the topic naturally (this aids retention)\n- Use real-life, relatable situations\n- No bullet points, no headers — only flowing paragraphs\n- Do NOT start with "This text is about..." or any meta-statement\n- Write ONLY the passage text, nothing else`;
+  return `You are an expert EFL content writer creating reading material for ${level} English learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nTOPIC AREA: ${LV_TOPICS[level]}\nREQUESTED TOPIC: "${topic}"\n\nIMPORTANT: If the topic is in Portuguese or contains accented characters, translate it to English first before writing (e.g. "futebol" → "soccer", "natação" → "swimming").\n\nWrite a reading passage of exactly 100-130 words about "${topic}" (in English).\nRules:\n- Every sentence must be clear and natural\n- Repeat 2-3 key words from the topic naturally (this aids retention)\n- Use real-life, relatable situations\n- No bullet points, no headers — only flowing paragraphs\n- Do NOT start with "This text is about..." or any meta-statement\n- Write ONLY the passage text, nothing else`;
 }
 
 function P_READING_QUESTIONS(text,level){
@@ -753,10 +746,11 @@ function P_READING_QUESTIONS(text,level){
   return `You are an EFL teacher creating comprehension questions for a ${level} learner.\n\nTEXT: "${text}"\n\nWrite exactly 3 questions. Rules:\n- Question 1: literal comprehension (found directly in text)\n- Question 2: inference (requires thinking beyond the text)\n- Question 3: personal connection ("What about you?" or "Have you ever...?")\n- For ${level}: use ${lang} for any clarifying notes but questions in English\n- Questions must be answerable with 1-3 sentences\n- Do NOT number them with Q1/Q2/Q3 — just list them\n\nReturn ONLY a JSON array of 3 question strings. Example: ["Q?","Q?","Q?"]`;
 }
 
+// [FIX P-reading-pt] P_READING_FEEDBACK: explicit instruction for encouragement language
 function P_READING_FEEDBACK(text,questions,answers,hints,level){
   const lang=LANG(level);
   const qa=questions.map((q,i)=>`Question ${i+1}: ${q}\nStudent's answer: ${answers[i]||"(no answer)"}\nExpected: ${hints[i]||""}`).join("\n\n");
-  return `You are an encouraging EFL teacher reviewing a ${level} student's reading comprehension.\n\nTEXT (first 100 chars): "${text.substring(0,100)}..."\n\n${qa}\n\nFor EACH question use this EXACT format:\n\n[Q1] ✅ Correct / ❌ Incorrect\n→ Why: [one sentence in ${lang} — be specific about what was right or wrong]\n→ Model answer: [complete, well-written answer in English appropriate for ${level}]\n${level==="Beginner"||level==="Basic"?`→ Tip: [one grammar or vocabulary tip in ${lang}]`:"→ Better: [how to make the answer even more sophisticated]"}\n\n[Q2] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\n[Q3] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\nEnd with one sentence of genuine encouragement (not generic). Total under 220 words.`;
+  return `You are an encouraging EFL teacher reviewing a ${level} student's reading comprehension.\n\nTEXT (first 100 chars): "${text.substring(0,100)}..."\n\n${qa}\n\nFor EACH question use this EXACT format:\n\n[Q1] ✅ Correct / ❌ Incorrect\n→ Why: [one sentence in ${lang} — be specific about what was right or wrong]\n→ Model answer: [complete, well-written answer in English appropriate for ${level}]\n${level==="Beginner"||level==="Basic"?`→ Tip: [one grammar or vocabulary tip in ${lang}]`:"→ Better: [how to make the answer even more sophisticated]"}\n\n[Q2] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\n[Q3] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\nEnd with one sentence of genuine encouragement. IMPORTANT: Write this final encouragement sentence in ${lang} — ${lang==="Portuguese"?"use Brazilian Portuguese":"use English"}. Total under 220 words.`;
 }
 
 function P_VOCAB_GENERATE(topic,level){
@@ -773,6 +767,8 @@ function P_LISTENING_GENERATE(topic,level){
 Write a natural spoken-English passage of 80-110 words about "${topic}" for ${level} learners.
 
 VOCABULARY RULE: ${LV_VOCAB[level]}
+
+IMPORTANT: If the topic is in Portuguese or contains accented characters, translate it to English first before writing (e.g. "futebol" → "soccer", "natação" → "swimming"). The passage must be 100% in English.
 
 Requirements:
 - Natural spoken rhythm (short sentences)
@@ -840,6 +836,7 @@ function timerWidget(tabKey){
   </div>`;
 }
 
+// [FIX P-espaço] Removed extra space before <span class='topic-label'> in all 4 generation buttons
 function topicSelector(selKey,customKey,placeholder,genBtnId){
   const active=getActiveTopic(selKey,customKey);
   return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
@@ -963,7 +960,8 @@ ${S.goalMonths?`<div class="card">
 function renderLesson(){
   const steps=[
     {key:"listen",icon:"◎",label:"Listening",desc:"Ouça e compreenda o texto"},
-    {key:"vocab",icon:"⊟",label:"Vocabulário",desc:"Aprenda palavras do tema"},
+    // [FIX P19-fix] Changed "Vocabulário" to "Vocabulary"
+    {key:"vocab",icon:"⊟",label:"Vocabulary",desc:"Aprenda palavras do tema"},
     {key:"speak",icon:"◈",label:"Speaking",desc:"Produza frases sobre o tema"},
   ];
   return `
@@ -1004,9 +1002,8 @@ ${S.lessonStep===0?`
   <div class="text-box">${esc(S.lessonData.text)}</div>
   <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
     <button class="btn btn-primary btn-sm" onclick="speak('${(S.lessonData.text||"").replace(/'/g,"\\'").replace(/\n/g," ")}')">🔊 Ouvir</button>
-    
   </div>
-  <button class="btn btn-success" onclick="S.lessonStep=1;render()">Avançar para Vocabulário →</button>
+  <button class="btn btn-success" onclick="S.lessonStep=1;render()">Avançar para Vocabulary →</button>
 </div>`:""}
 ${S.lessonStep===1?`
 <div class="card">
@@ -1101,7 +1098,7 @@ ${timerWidget("listening")}
   ${topicSelector("lisTopic","lisTopicCustom","Ou digite qualquer tema... ex: viagem de férias, entrevista de emprego","lisGenBtn")}
   <div style="display:flex;gap:9px;flex-wrap:wrap">
     <button id="lisGenBtn" class="btn btn-primary" onclick="generateListening()" ${S.genLoading||!getActiveTopic("lisTopic","lisTopicCustom")?"disabled":""}>
-      ${S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre <span class='topic-label'>"+(getActiveTopic("lisTopic","lisTopicCustom")||"...")+"</span>"}
+      ${S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre<span class='topic-label'> "+(getActiveTopic("lisTopic","lisTopicCustom")||"...")+"</span>"}
     </button>
     ${getActiveTopic("lisTopic","lisTopicCustom")?`<button class="btn btn-secondary" onclick="S.lisTopic='';S.lisTopicCustom='';S.genListening=null;S.genListeningText='';S.genListeningQs=[];S.lisAnswers={};S.lisFeedback=null;render()">✕ Limpar</button>`:""}
   </div>
@@ -1127,6 +1124,10 @@ ${timerWidget("listening")}
   ${S.lisFeedback?`<div class="success-box"><div style="color:#6ee7b7;font-weight:700;margin-bottom:6px;font-size:13px">✓ Feedback:</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:#d1fae5">${esc(S.lisFeedback)}</div></div>`:`<button class="btn btn-primary btn-sm" onclick="checkListeningAnswers()" ${S.lisAnsLoading?"disabled":""}>${S.lisAnsLoading?"⏳...":"Verificar respostas"}</button>`}
   `:""}
   `:""}
+  ${!S.mission.listening?`
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid #1a1828;text-align:center">
+    <button class="btn btn-success" onclick="completeTask('listening');showTab('dashboard')">✓ Concluir Listening</button>
+  </div>`:""}
 </div>`;
 }
 
@@ -1176,7 +1177,7 @@ ${timerWidget("speaking")}
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar prompts por tema</div>
   ${topicSelector("speakTopic","speakTopicCustom","Ou digite seu tema... ex: minha rotina de trabalho, férias nos EUA","speakGenBtn")}
   <button id="speakGenBtn" class="btn btn-primary btn-sm" onclick="generateSpeakPrompts()" ${S.speakGenLoading||!getActiveTopic("speakTopic","speakTopicCustom")?"disabled":""}>
-    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompts sobre <span class='topic-label'>"+(getActiveTopic("speakTopic","speakTopicCustom")||"...")+"</span>"}
+    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompts sobre<span class='topic-label'> "+(getActiveTopic("speakTopic","speakTopicCustom")||"...")+"</span>"}
   </button>
   ${S.speakGenPrompts.length>0?`<div style="margin-top:8px;font-size:12px;color:#6ee7b7">✓ ${S.speakGenPrompts.length} prompts gerados sobre "${getActiveTopic("speakTopic","speakTopicCustom")}"!</div>`:""}
 </div>
@@ -1197,6 +1198,7 @@ ${timerWidget("speaking")}
     <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-secondary btn-sm" onclick="saveSpeak()">⭐ Salvar esta resposta</button>
       <button class="btn btn-secondary btn-sm" onclick="nextSpeakRound()">→ Próximo prompt</button>
+      ${!S.mission.speaking?`<button class="btn btn-success btn-sm" onclick="completeTask('speaking');showTab('dashboard')">✓ Concluir Speaking</button>`:""}
     </div>
   </div>`:""}
 </div>
@@ -1206,7 +1208,8 @@ ${S.speakHistory.length>0?`
   ${S.speakHistory.map((h,i)=>`
   <div style="padding:10px 13px;background:#0c0c18;border-radius:10px;margin-bottom:8px;border:1px solid #1a1828">
     <div style="font-size:11px;color:#a78bfa;margin-bottom:4px">Rodada ${i+1} — "${h.prompt}"</div>
-    <div style="font-size:13px;color:#d1d5db">${esc(h.text)}</div>
+    ${h.corrected?`<div style="font-size:11px;color:#6b7280;margin-bottom:3px">✅ Versão corrigida:</div><div style="font-size:13px;color:#6ee7b7">${esc(h.corrected)}</div>`:
+    `<div style="font-size:13px;color:#d1d5db">${esc(h.text)}</div>`}
   </div>`).join("")}
 </div>`:""}
 ${(S.savedSpeaking||[]).length>0?`
@@ -1251,7 +1254,10 @@ async function submitSpeaking(){
     const prompt=`You are an expert EFL speaking coach. The student is at ${S.level} level.\n\nSPEAKING PROMPT GIVEN: "${currentSpeakPrompt()}"\nSTUDENT'S ANSWER: "${text}"\n\nRespond with this EXACT structure (use these exact labels):\n\n✅ CORRECTED:\n[Write the corrected version — fix ALL grammar, vocabulary, word order errors]\n\n💡 MORE NATURAL:\n[Rewrite as a fluent native speaker would say it — same ideas, better flow]\n\n🔊 PRONUNCIATION TIP:\n[One specific, actionable tip for a ${S.level} learner — in ${lang}]\n\n📝 WHAT YOU LEARNED:\n[Explain the 1-2 most important mistakes in ${lang} — be specific, not generic. If the answer is correct, say so and explain one thing that could make it even better]\n\n🗣️ NOW YOU:\n[One follow-up question pushing them to produce one more sentence on the same topic]\n\nKeep total response under 200 words. Be warm but precise — skip empty praise.`;
     const reply=await callAI([{role:"user",content:prompt}]);
     S.speakFeedback=reply;
-    S.speakHistory.push({prompt:currentSpeakPrompt(),text,feedback:reply});
+    // [FIX P28] Extract corrected version to show in history instead of original (with errors)
+    const parsedFb=parseSpeakFeedback(reply);
+    const correctedText=parsedFb?.corrected||text;
+    S.speakHistory.push({prompt:currentSpeakPrompt(),text,corrected:correctedText,feedback:reply});
     completeTask("speaking");
   }catch(e){
     S.speakFeedback=null;
@@ -1260,9 +1266,7 @@ async function submitSpeaking(){
   S.speakLoading=false; render();
 }
 
-/* ═══ Speaking Feedback — MELHORADO (Pareto) ═══
-   2 blocos sempre visíveis + detalhes colapsáveis
-*/
+/* ═══ Speaking Feedback — MELHORADO (Pareto) ═══ */
 function parseSpeakFeedback(raw){
   if(!raw) return null;
   const sections={corrected:"",natural:"",pronunciation:"",learned:"",followup:""};
@@ -1284,14 +1288,13 @@ function parseSpeakFeedback(raw){
 function renderSpeakFeedback(raw){
   const p=parseSpeakFeedback(raw);
 
-  // Fallback: se parsing falhar, mostra raw formatado
   if(!p){
     return `<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:#d1fae5;background:#07070f;border-radius:10px;padding:14px">${esc(raw)}</div>`;
   }
 
   const uid="fb"+Math.random().toString(36).slice(2,7);
 
-  // Bloco 1: Versão corrigida (sempre visível)
+  // [FIX P25] Block 1: corrected version — onclick calls speak() directly with corrected text
   const block1=p.corrected?`
   <div class="fb-card" style="background:#031710;border:1px solid #065f46">
     <div class="fb-main">
@@ -1299,13 +1302,12 @@ function renderSpeakFeedback(raw){
         <span style="font-size:14px">✅</span> Versão corrigida
       </div>
       <div class="fb-text" style="color:#d1fae5">${esc(p.corrected)}</div>
-      <button class="fb-speak-btn" onclick="speak('${p.corrected.replace(/'/g,"\\'").replace(/\n/g," ").substring(0,200)}')">
+      <button class="fb-speak-btn" onclick="speak(${JSON.stringify(p.corrected.substring(0,200))})">
         🔊 Ouvir versão corrigida
       </button>
     </div>
   </div>`:"";
 
-  // Bloco 2: Como um nativo diria (sempre visível)
   const block2=p.natural?`
   <div class="fb-card" style="background:#0f0a1e;border:1px solid #3d1d6b">
     <div class="fb-main">
@@ -1316,16 +1318,22 @@ function renderSpeakFeedback(raw){
     </div>
   </div>`:"";
 
-  // Detalhes colapsáveis (pronúncia + o que aprender)
+  // [FIX P27] Details toggle — using proper onclick with element reference
   const hasDetails=p.pronunciation||p.learned;
   const details=hasDetails?`
   <div class="fb-card" style="background:#0c0c18;border:1px solid #1a1828">
-    <button class="fb-toggle" onclick="
-      const d=document.getElementById('${uid}');
-      const open=d.classList.toggle('open');
-      this.textContent=open?'▲ Ocultar detalhes':'▼ Ver análise completa (pronúncia + o que aprender)';
+    <button class="fb-toggle" id="toggle_${uid}" onclick="
+      const d=document.getElementById('det_${uid}');
+      const btn=document.getElementById('toggle_${uid}');
+      if(d.style.display==='none'||!d.style.display){
+        d.style.display='block';
+        btn.textContent='▲ Ocultar detalhes';
+      } else {
+        d.style.display='none';
+        btn.textContent='▼ Ver análise completa (pronúncia + o que aprender)';
+      }
     ">▼ Ver análise completa (pronúncia + o que aprender)</button>
-    <div class="fb-details" id="${uid}">
+    <div id="det_${uid}" style="display:none;background:#07070f;border-top:1px solid #1a1828;padding:13px 15px">
       ${p.pronunciation?`<div class="fb-detail-row">
         <div class="fb-detail-label" style="color:#60a5fa">🔊 Dica de pronúncia</div>
         <div class="fb-detail-text">${esc(p.pronunciation)}</div>
@@ -1337,7 +1345,6 @@ function renderSpeakFeedback(raw){
     </div>
   </div>`:"";
 
-  // Follow-up (sempre visível — convida à próxima produção)
   const followup=p.followup?`
   <div class="fb-followup">
     <div class="fb-followup-label">🗣️ Agora você</div>
@@ -1397,7 +1404,7 @@ ${timerWidget("reading")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar texto por tema com IA</div>
   ${topicSelector("readTopic","readTopicCustom","Ou digite qualquer tema... ex: inteligência artificial, gastronomia","readGenBtn")}
-  <button id="readGenBtn" class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre <span class='topic-label'>"+(topic||"...")+"</span>"}</button>
+  <button id="readGenBtn" class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre<span class='topic-label'> "+(topic||"...")+"</span>"}</button>
   ${topic?`<button class="btn btn-secondary btn-sm" onclick="S.readTopic='';S.readTopicCustom='';S.genReading=null;S.genReadingQs=[];S.genReadingAnswers={};S.genReadingFeedback=null;render()" style="margin-left:8px">✕ Limpar</button>`:""}
   ${S.genReading?`
   <div style="margin-top:14px">
@@ -1511,7 +1518,7 @@ ${timerWidget("vocabulary")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar vocabulário por tema</div>
   ${topicSelector("vocabTopic","vocabTopicCustom","Ou digite qualquer tema... ex: reuniões de trabalho, culinária","vocabGenBtn")}
-  <button id="vocabGenBtn" class="btn btn-primary btn-sm" onclick="generateVocab()" ${S.vocabGenLoading||!getActiveTopic("vocabTopic","vocabTopicCustom")?"disabled":""}>${S.vocabGenLoading?"⏳...":"✦ Gerar sobre <span class='topic-label'>"+(getActiveTopic("vocabTopic","vocabTopicCustom")||"...")+"</span>"}</button>
+  <button id="vocabGenBtn" class="btn btn-primary btn-sm" onclick="generateVocab()" ${S.vocabGenLoading||!getActiveTopic("vocabTopic","vocabTopicCustom")?"disabled":""}>${S.vocabGenLoading?"⏳...":"✦ Gerar sobre<span class='topic-label'> "+(getActiveTopic("vocabTopic","vocabTopicCustom")||"...")+"</span>"}</button>
   ${(S.vocabGenWords||[]).length>0?`<span style="font-size:12px;color:#6ee7b7;margin-left:10px">+${S.vocabGenWords.length} palavras adicionadas!</span>`:""}
 </div>
 <div class="card" style="margin-bottom:14px">
@@ -1582,8 +1589,9 @@ ${timerWidget("vocabulary")}
     </div>
     <div style="display:flex;gap:7px;align-items:center">
       <span style="font-size:11px;color:#555">${v.pt}</span>
-      ${S.vocabSRS[v.id]?.status==="learned"?`<span style="color:#059669;font-size:12px">✓</span>`:""}
-      ${S.vocabSRS[v.id]?.status==="review"?`<span style="color:#f59e0b;font-size:12px">↺</span>`:""}
+      ${S.vocabSRS[v.id]?.status==="learned"?`<span style="color:#059669;font-size:12px" title="Aprendida">✓</span>`:""}
+      ${S.vocabSRS[v.id]?.status==="review"?`<span style="color:#f59e0b;font-size:12px" title="Para revisar">↺</span>`:""}
+      ${!S.vocabSRS[v.id]?`<span style="color:#444;font-size:12px" title="Nova">·</span>`:""}
     </div>
   </div>`).join("")}
 </div>`;
@@ -1630,7 +1638,6 @@ function srsAnswer(id,difficulty){
   const result=srsCompute(id,quality);
   S.vocabSRS[id]=result;
 
-  // feedback visual: próxima data de revisão
   const nextDate=new Date(result.nextReview).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
   const dayLabel=result.interval===1?"amanhã":result.interval===6?"em 6 dias":"em "+result.interval+" dias";
   const colorMap={hard:"#f87171",medium:"#fcd34d",easy:"#6ee7b7"};
@@ -1982,7 +1989,6 @@ function showOnboarding(){
 function renderOnboarding(){
   const q=OB_QUESTIONS[S.onboardStep];
   const card=document.getElementById("onboardingCard"); if(!card) return;
-  // progress bar excludes intro step (step 0) — shows 0→100% across the 4 real questions
   const realSteps=OB_QUESTIONS.length-1;
   const realStep=Math.max(0,S.onboardStep-1);
   const pct=q.type==="intro"?0:Math.round((realStep/realSteps)*100);
@@ -2041,7 +2047,6 @@ function renderOnboarding(){
   const btnLabel=q.type==="intro"?"Personalizar meu plano →":isLast?"Começar a aprender! 🚀":"Continuar →";
   inner+=`<button class="btn btn-primary" style="width:100%;justify-content:center" onclick="obNext()" ${!canNext?"disabled":""}>${btnLabel}</button>`;
   card.innerHTML=inner;
-  // auto-focus name input for faster typing
   if(q.type==="name"){ const inp=document.getElementById("obName"); if(inp) setTimeout(()=>inp.focus(),50); }
 }
 
@@ -2070,9 +2075,7 @@ if(synth) synth.onvoiceschanged=()=>synth.getVoices();
 loadState();
 const isFirst=!S.userName&&S.totalDays===0;
 render();
-// poll every 60s — catches midnight rollover when app stays open overnight
 setInterval(checkDayReset, 60_000);
-// reveal content with fade after first render — hides FOUC and skeleton flash
 requestAnimationFrame(()=>{ const el=document.getElementById("content"); if(el) el.classList.add("ready"); });
 if(isFirst) showOnboarding();
 if(["listening","speaking","reading","vocabulary"].includes(S.tab)) startTimer(S.tab);
