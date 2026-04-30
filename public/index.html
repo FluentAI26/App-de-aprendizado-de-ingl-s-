@@ -206,6 +206,9 @@ body{font-family:'DM Sans',sans-serif;background:#08080f;color:#e2e0f0;min-heigh
 <script>
 const LEVELS=["Beginner","Basic","Pre-Intermediate","Intermediate","Upper-Intermediate","Advanced"];
 const TOPICS=["trabalho","viagem","tecnologia","família","saúde","comida","esportes","educação","natureza","entretenimento","negócios","cultura","ciência","política","arte"];
+// Mapa PT→EN para tópicos pré-definidos — garante que a IA nunca receba palavras em PT
+const TOPIC_EN={"trabalho":"work","viagem":"travel","tecnologia":"technology","família":"family","saúde":"health","comida":"food","esportes":"sports","educação":"education","natureza":"nature","entretenimento":"entertainment","negócios":"business","cultura":"culture","ciência":"science","política":"politics","arte":"art"};
+function translateTopic(t){ return TOPIC_EN[t.trim().toLowerCase()]||t; }
 const TIME_OPTIONS=[
   {total:30,l:{listening:10,reading:10,speaking:5,vocabulary:5}},
   {total:60,l:{listening:20,reading:15,speaking:15,vocabulary:10}},
@@ -1131,7 +1134,7 @@ ${timerWidget("listening")}
 </div>`
 }
 async function generateListening(){
-  const topic=getActiveTopic("lisTopic","lisTopicCustom");
+  const topic=translateTopic(getActiveTopic("lisTopic","lisTopicCustom"));
   if(!topic||S.genLoading) return;
   S.genLoading=true; S.genListening=null; S.genListeningText=""; S.genListeningQs=[]; S.lisAnswers={}; S.lisFeedback=null; render();
   try{
@@ -1232,7 +1235,7 @@ ${(S.savedSpeaking||[]).length>0?`
 }
 
 async function generateSpeakPrompts(){
-  const topic=getActiveTopic("speakTopic","speakTopicCustom");
+  const topic=translateTopic(getActiveTopic("speakTopic","speakTopicCustom"));
   if(!topic||S.speakGenLoading) return;
   S.speakGenLoading=true; render();
   try{
@@ -1447,7 +1450,7 @@ function renderReadingFeedback(raw){
 }
 
 async function generateReading(){
-  const topic=getActiveTopic("readTopic","readTopicCustom");
+  const topic=translateTopic(getActiveTopic("readTopic","readTopicCustom"));
   if(!topic||S.genReadingLoading) return;
   S.genReadingLoading=true; S.genReading=null; S.genReadingQs=[]; S.genReadingAnswers={}; S.genReadingFeedback=null; render();
   try{
@@ -1671,7 +1674,7 @@ function reviewAnswer(id,difficulty,idx,total){
 }
 
 async function generateVocab(){
-  const topic=getActiveTopic("vocabTopic","vocabTopicCustom");
+  const topic=translateTopic(getActiveTopic("vocabTopic","vocabTopicCustom"));
   if(!topic||S.vocabGenLoading) return;
   S.vocabGenLoading=true; render();
   try{
