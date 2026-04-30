@@ -753,7 +753,7 @@ function P_READING_QUESTIONS(text,level){
 function P_READING_FEEDBACK(text,questions,answers,hints,level){
   const lang=LANG(level);
   const qa=questions.map((q,i)=>`Question ${i+1}: ${q}\nStudent's answer: ${answers[i]||"(no answer)"}\nExpected: ${hints[i]||""}`).join("\n\n");
-  return `You are an encouraging EFL teacher reviewing a ${level} student's reading comprehension.\n\nTEXT (first 100 chars): "${text.substring(0,100)}..."\n\n${qa}\n\nFor EACH question use this EXACT format:\n\n[Q1] ✅ Correct / ❌ Incorrect\n→ Why: [one sentence in ${lang} — be specific about what was right or wrong]\n→ Model answer: [complete, well-written answer in English appropriate for ${level}]\n${level==="Beginner"||level==="Basic"?`→ Tip: [one grammar or vocabulary tip in ${lang}]`:"→ Better: [how to make the answer even more sophisticated]"}\n\n[Q2] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\n[Q3] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\nEnd with one sentence of genuine encouragement. IMPORTANT: Write this final encouragement sentence in ${lang} — ${lang==="Portuguese"?"use Brazilian Portuguese":"use English"}. Total under 220 words.`;
+  return `You are an encouraging EFL teacher reviewing a ${level} student's reading comprehension.\n\nTEXT (first 100 chars): "${text.substring(0,100)}..."\n\n${qa}\n\nFor EACH question use this EXACT format:\n\n[Q1] ✅ Correct / ❌ Incorrect\n→ Why: [one sentence in ${lang} — be specific about what was right or wrong]\n→ Model answer: [complete, well-written answer in English appropriate for ${level}]\n${level==="Beginner"||level==="Basic"?`→ Tip: [one grammar or vocabulary tip in ${lang}]`:"→ Better: [how to make the answer even more sophisticated]"}\n\n[Q2] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\n[Q3] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\nTotal under 220 words. Do NOT add any motivational closing sentence or encouragement at the end.`;
 }
 
 function P_VOCAB_GENERATE(topic,level){
@@ -1101,7 +1101,7 @@ ${timerWidget("listening")}
   ${topicSelector("lisTopic","lisTopicCustom","Ou digite qualquer tema... ex: viagem de férias, entrevista de emprego","lisGenBtn")}
   <div style="display:flex;gap:9px;flex-wrap:wrap">
     <button id="lisGenBtn" class="btn btn-primary" onclick="generateListening()" ${S.genLoading||!getActiveTopic("lisTopic","lisTopicCustom")?"disabled":""}>
-      ${S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre<span class='topic-label'>"+(getActiveTopic("lisTopic","lisTopicCustom")||"...")+"</span>"}
+      ${S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(getActiveTopic("lisTopic","lisTopicCustom")||"...")}
     </button>
     ${getActiveTopic("lisTopic","lisTopicCustom")?`<button class="btn btn-secondary" onclick="S.lisTopic='';S.lisTopicCustom='';S.genListening=null;S.genListeningText='';S.genListeningQs=[];S.lisAnswers={};S.lisFeedback=null;render()">✕ Limpar</button>`:""}
   </div>
@@ -1179,7 +1179,7 @@ ${timerWidget("speaking")}
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar prompts por tema</div>
   ${topicSelector("speakTopic","speakTopicCustom","Ou digite seu tema... ex: minha rotina de trabalho, férias nos EUA","speakGenBtn")}
   <button id="speakGenBtn" class="btn btn-primary btn-sm" onclick="generateSpeakPrompts()" ${S.speakGenLoading||!getActiveTopic("speakTopic","speakTopicCustom")?"disabled":""}>
-    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompts sobre<span class='topic-label'>"+(getActiveTopic("speakTopic","speakTopicCustom")||"...")+"</span>"}
+    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompts sobre "+(getActiveTopic("speakTopic","speakTopicCustom")||"...")}
   </button>
   ${S.speakGenPrompts.length>0?`<div style="margin-top:8px;font-size:12px;color:#6ee7b7">✓ ${S.speakGenPrompts.length} prompts gerados sobre "${getActiveTopic("speakTopic","speakTopicCustom")}"!</div>`:""}
 </div>
@@ -1406,7 +1406,7 @@ ${timerWidget("reading")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar texto por tema com IA</div>
   ${topicSelector("readTopic","readTopicCustom","Ou digite qualquer tema... ex: inteligência artificial, gastronomia","readGenBtn")}
-  <button id="readGenBtn" class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre<span class='topic-label'>"+(topic||"...")+"</span>"}</button>
+  <button id="readGenBtn" class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(topic||"...")}</button>
   ${topic?`<button class="btn btn-secondary btn-sm" onclick="S.readTopic='';S.readTopicCustom='';S.genReading=null;S.genReadingQs=[];S.genReadingAnswers={};S.genReadingFeedback=null;render()" style="margin-left:8px">✕ Limpar</button>`:""}
   ${S.genReading?`
   <div style="margin-top:14px">
@@ -1520,7 +1520,7 @@ ${timerWidget("vocabulary")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar vocabulário por tema</div>
   ${topicSelector("vocabTopic","vocabTopicCustom","Ou digite qualquer tema... ex: reuniões de trabalho, culinária","vocabGenBtn")}
-  <button id="vocabGenBtn" class="btn btn-primary btn-sm" onclick="generateVocab()" ${S.vocabGenLoading||!getActiveTopic("vocabTopic","vocabTopicCustom")?"disabled":""}>${S.vocabGenLoading?"⏳...":"✦ Gerar sobre<span class='topic-label'>"+(getActiveTopic("vocabTopic","vocabTopicCustom")||"...")+"</span>"}</button>
+  <button id="vocabGenBtn" class="btn btn-primary btn-sm" onclick="generateVocab()" ${S.vocabGenLoading||!getActiveTopic("vocabTopic","vocabTopicCustom")?"disabled":""}>${S.vocabGenLoading?"⏳...":"✦ Gerar sobre "+(getActiveTopic("vocabTopic","vocabTopicCustom")||"...")}</button>
   ${(S.vocabGenWords||[]).length>0?`<span style="font-size:12px;color:#6ee7b7;margin-left:10px">+${S.vocabGenWords.length} palavras adicionadas!</span>`:""}
 </div>
 <div class="card" style="margin-bottom:14px">
