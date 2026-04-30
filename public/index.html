@@ -1302,7 +1302,7 @@ function renderSpeakFeedback(raw){
         <span style="font-size:14px">✅</span> Versão corrigida
       </div>
       <div class="fb-text" style="color:#d1fae5">${esc(p.corrected)}</div>
-      <button class="fb-speak-btn" onclick="speak(${JSON.stringify(p.corrected.substring(0,200))})">
+      <button class="fb-speak-btn" data-txt="${esc(p.corrected.substring(0,200))}" onclick="speak(this.getAttribute('data-txt'))">
         🔊 Ouvir versão corrigida
       </button>
     </div>
