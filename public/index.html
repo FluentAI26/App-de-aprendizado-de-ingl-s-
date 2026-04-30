@@ -984,7 +984,7 @@ ${!S.lessonTopic?`
     <span style="font-size:12px;color:#a78bfa;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Tema:</span>
     <span style="font-size:14px;color:#e2e0f0;margin-left:8px;font-weight:500">${S.lessonTopic}</span>
   </div>
-  <button class="btn btn-secondary btn-sm" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;render()">✕ Encerrar</button>
+  <button class="btn btn-secondary btn-sm" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;S.lessonSpeakInput='';render()">✕ Encerrar</button>
 </div>
 <div style="display:flex;gap:10px;margin-bottom:20px">
   ${steps.map((s,i)=>`
@@ -1031,14 +1031,14 @@ ${S.lessonStep===2?`
     <button class="btn btn-secondary btn-sm" id="lessonMicBtn" onclick="toggleLessonMic()" title="Falar em voz alta">🎤 Falar</button>
   </div>
   <div id="lessonMicStatus" style="font-size:12px;color:#a78bfa;margin-top:6px;min-height:18px"></div>
-  ${S.lessonData.speakFeedback?`<div style="margin-top:14px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback do AI Coach:</div>${renderSpeakFeedback(S.lessonData.speakFeedback)}<button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;completeTask('listening');completeTask('vocabulary');completeTask('speaking');render()">🎉 Concluir lição!</button></div>`:""}
+  ${S.lessonData.speakFeedback?`<div style="margin-top:14px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback do AI Coach:</div>${renderSpeakFeedback(S.lessonData.speakFeedback)}<button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;S.lessonSpeakInput='';completeTask('listening');completeTask('vocabulary');completeTask('speaking');render()">🎉 Concluir lição!</button></div>`:""}
 </div>`:""}
 `:""}
 `}`;
 }
 
 async function startLesson(topic){
-  S.lessonTopic=topic; S.lessonStep=0; S.lessonData=null; S.lessonLoading=true; render();
+  S.lessonTopic=topic; S.lessonStep=0; S.lessonData=null; S.lessonLoading=true; S.lessonSpeakInput=""; render();
   try{
     const p=`You are an EFL content creator. Create a structured English lesson about "${topic}" for ${S.level} level.\n\nCRITICAL RULES:\n- TOPIC LANGUAGE: The topic may be in Portuguese — always translate it to English before using it (e.g. "natação" → "swimming", "futebol" → "soccer").\n- "text": ALWAYS 100% in English. Never include Portuguese words in the text, even if the topic is in Portuguese.\n- "vocab": each "word" and "sentence" MUST be in English. "pt" is the Portuguese translation of the word only. "sentencePt" is the Portuguese translation of the sentence.\n- "speakPrompt": a question in English for the student to answer.\n\nVOCABULARY RULE: ${LV_VOCAB[S.level]}\n\nReturn ONLY valid JSON, no markdown, no explanation:\n{"text":"[80-100 word spoken-English passage]","vocab":[{"word":"[English word]","pt":"[PT translation of word]","sentence":"[English example sentence]","sentencePt":"[PT translation of sentence]"},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."}],"speakPrompt":"[English question about the topic]"}`;
     const r=await callAI([{role:"user",content:p}]);
