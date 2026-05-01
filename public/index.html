@@ -1146,8 +1146,9 @@ async function generateListening(){
   }catch(e){
     S.genListening=null; S.genListeningText="";
     showToast(e.message||"Erro ao gerar conteúdo. Tente novamente.","#f87171");
+  }finally{
+    S.genLoading=false; render();
   }
-  S.genLoading=false; render();
 }
 
 async function checkListeningAnswers(){
@@ -1158,8 +1159,9 @@ async function checkListeningAnswers(){
   }catch(e){
     S.lisFeedback=null;
     showToast(e.message||"Erro ao verificar respostas. Tente novamente.","#f87171");
+  }finally{
+    S.lisAnsLoading=false; render();
   }
-  S.lisAnsLoading=false; render();
 }
 
 function currentSpeakPrompt(){
@@ -1264,8 +1266,9 @@ async function submitSpeaking(){
   }catch(e){
     S.speakFeedback=null;
     showToast(e.message||"Erro ao conectar. Tente novamente.","#f87171");
+  }finally{
+    S.speakLoading=false; render();
   }
-  S.speakLoading=false; render();
 }
 
 /* ═══ Speaking Feedback — MELHORADO (Pareto) ═══ */
@@ -1462,8 +1465,9 @@ async function generateReading(){
   }catch(e){
     S.genReading=null;
     showToast(e.message||"Erro ao gerar texto. Tente novamente.","#f87171");
+  }finally{
+    S.genReadingLoading=false; render();
   }
-  S.genReadingLoading=false; render();
 }
 
 async function submitGenReading(){
@@ -1474,8 +1478,9 @@ async function submitGenReading(){
   }catch(e){
     S.genReadingFeedback=null;
     showToast(e.message||"Erro ao processar. Tente novamente.","#f87171");
+  }finally{
+    S.genReadingFeedbackLoading=false; render();
   }
-  S.genReadingFeedbackLoading=false; render();
 }
 
 async function submitReading(){
@@ -1680,8 +1685,7 @@ async function generateVocab(){
   try{
     const parsed=JSON.parse(cleanJson(await callAI([{role:"user",content:P_VOCAB_GENERATE(topic,S.level)}])));
     S.vocabGenWords=[...(S.vocabGenWords||[]),...parsed.map((w,i)=>({...w,id:7000+Date.now()+i,cat:topic}))];
-  }catch(e){ showToast(e.message||"Erro ao gerar vocabulário. Tente novamente.","#f87171"); }
-  S.vocabGenLoading=false; render();
+  }catch(e){ showToast(e.message||"Erro ao gerar vocabulário. Tente novamente.","#f87171"); }finally{ S.vocabGenLoading=false; render(); }
 }
 
 async function generateCustomVocab(){
