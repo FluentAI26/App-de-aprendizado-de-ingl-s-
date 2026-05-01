@@ -1200,7 +1200,7 @@ ${timerWidget("speaking")}
     <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-secondary btn-sm" onclick="saveSpeak()">⭐ Salvar esta resposta</button>
       <button class="btn btn-secondary btn-sm" onclick="nextSpeakRound()">→ Próximo prompt</button>
-      ${!S.mission.speaking?`<button class="btn btn-success btn-sm" onclick="completeTask('speaking');showTab('dashboard')">✓ Concluir Speaking</button>`:""}
+      ${(S.sessionTime.speaking>=(S.missionTimes.speaking||15)*60)?(!S.mission.speaking?`<button class="btn btn-success btn-sm" onclick="completeTask('speaking');showTab('dashboard')">✓ Concluir Speaking</button>`:`<button class="btn btn-secondary btn-sm" onclick="showTab('dashboard')">← Voltar ao Dashboard</button>`):""}
     </div>
   </div>`:""}
 </div>
