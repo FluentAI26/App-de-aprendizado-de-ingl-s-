@@ -798,7 +798,13 @@ const TABS=[
 ];
 
 function showTab(id){
-  stopTimer(); S.tab=id; render();
+  stopTimer();
+  // Opção B: ao entrar no Speaking, limpa feedback ativo mas mantém histórico
+  if(id==="speaking"){
+    S.speakFeedback=null; S.speakInput="";
+    const ta=document.getElementById("speakTextarea"); if(ta) ta.value="";
+  }
+  S.tab=id; render();
   if(["listening","speaking","reading","vocabulary"].includes(id)) startTimer(id);
 }
 function renderTabs(){
@@ -1165,7 +1171,8 @@ async function checkListeningAnswers(){
 }
 
 function currentSpeakPrompt(){
-  if(S.speakGenPrompts.length>0) return S.speakGenPrompts[S.speakRound%S.speakGenPrompts.length];
+  // Usa o prompt atual (último da fila) ou prompts padrão
+  if(S.speakGenPrompts.length>0) return S.speakGenPrompts[S.speakGenPrompts.length-1];
   const arr=SPEAKING_PROMPTS[S.level]||SPEAKING_PROMPTS.Beginner;
   return arr[S.speakRound%arr.length];
 }
@@ -1181,9 +1188,9 @@ ${timerWidget("speaking")}
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar prompts por tema</div>
   ${topicSelector("speakTopic","speakTopicCustom","Ou digite seu tema... ex: minha rotina de trabalho, férias nos EUA","speakGenBtn")}
   <button id="speakGenBtn" class="btn btn-primary btn-sm" onclick="generateSpeakPrompts()" ${S.speakGenLoading||!getActiveTopic("speakTopic","speakTopicCustom")?"disabled":""}>
-    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompts sobre "+(getActiveTopic("speakTopic","speakTopicCustom")||"...")}
+    ${S.speakGenLoading?"⏳ Gerando...":"✦ Começar prompts sobre "+(getActiveTopic("speakTopic","speakTopicCustom")||"...")}
   </button>
-  ${S.speakGenPrompts.length>0?`<div style="margin-top:8px;font-size:12px;color:#6ee7b7">✓ ${S.speakGenPrompts.length} prompts gerados sobre "${getActiveTopic("speakTopic","speakTopicCustom")}"!</div>`:""}
+  ${S.speakGenPrompts.length>0?`<div style="margin-top:8px;font-size:12px;color:#6ee7b7">✓ Prompt gerado! Clique "→ Próximo prompt" para gerar mais.</div>`:""}
 </div>
 <div class="card" style="border-color:#3d1d6b">
   <div style="background:#1e1a2e;display:inline-block;padding:3px 10px;border-radius:6px;font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:12px;letter-spacing:.06em">PROMPT ${S.speakRound+1}</div>
@@ -1241,12 +1248,25 @@ async function generateSpeakPrompts(){
   if(!topic||S.speakGenLoading) return;
   S.speakGenLoading=true; render();
   try{
-    const p=`Generate 5 speaking prompts about "${topic}" for ${S.level} English level. Return ONLY JSON array of 5 strings.`;
-    S.speakGenPrompts=JSON.parse(cleanJson(await callAI([{role:"user",content:p}])));
+    const p=`Generate 1 speaking prompt about "${topic}" for ${S.level} English level. Return ONLY a JSON array with 1 string. Example: ["Your prompt here?"]`;
+    const result=JSON.parse(cleanJson(await callAI([{role:"user",content:p}])));
+    S.speakGenPrompts=[result[0]];
     S.speakRound=0;
-  }catch(e){ showToast(e.message||"Erro ao gerar prompts. Tente novamente.","#f87171"); }
-  S.speakGenLoading=false; render();
+  }catch(e){ showToast(e.message||"Erro ao gerar prompt. Tente novamente.","#f87171"); }finally{ S.speakGenLoading=false; render(); }
 }
+
+async function generateNextSpeakPrompt(){
+  const topic=translateTopic(getActiveTopic("speakTopic","speakTopicCustom"));
+  if(!topic||S.speakGenLoading) return;
+  S.speakGenLoading=true; render();
+  try{
+    const previous=S.speakGenPrompts.slice(-5).map((p,i)=>`${i+1}. ${p}`).join(" | ");
+    const p=`Generate 1 NEW speaking prompt about "${topic}" for ${S.level} English level. Do NOT repeat these previous prompts: ${previous}. Return ONLY a JSON array with 1 string. Example: ["Your new prompt here?"]`;
+    const result=JSON.parse(cleanJson(await callAI([{role:"user",content:p}])));
+    S.speakGenPrompts.push(result[0]);
+  }catch(e){ showToast(e.message||"Erro ao gerar próximo prompt.","#f87171"); }finally{ S.speakGenLoading=false; render(); }
+}
+
 
 async function submitSpeaking(){
   const ta=document.getElementById("speakTextarea");
@@ -1371,7 +1391,13 @@ function saveSpeak(){
 function nextSpeakRound(){
   S.speakRound++; S.speakInput=""; S.speakFeedback=null;
   const ta=document.getElementById("speakTextarea"); if(ta) ta.value="";
-  render();
+  // Se há tema selecionado, gera próximo prompt automaticamente
+  const topic=getActiveTopic("speakTopic","speakTopicCustom");
+  if(topic && S.speakGenPrompts.length>0){
+    generateNextSpeakPrompt();
+  } else {
+    render();
+  }
 }
 
 function sendChunkToAI(chunk){
