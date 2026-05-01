@@ -1448,7 +1448,7 @@ ${timerWidget("reading")}
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
       ${S.genReadingQs.map((q,i)=>`<div><p style="font-size:13px;color:#c4b5fd;margin-bottom:5px">${i+1}. ${q}</p><input class="inp" placeholder="Your answer..." value="${esc(S.genReadingAnswers[i]||"")}" oninput="S.genReadingAnswers[${i}]=this.value"/></div>`).join("")}
     </div>
-    ${S.genReadingFeedback?`<div style="margin-top:10px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback:</div>${renderReadingFeedback(S.genReadingFeedback)}</div>`:`<button class="btn btn-primary btn-sm" onclick="submitGenReading()" ${S.genReadingFeedbackLoading?"disabled":""}>${S.genReadingFeedbackLoading?"⏳...":"Verificar respostas"}</button>`}
+    ${S.genReadingFeedback?`<div style="margin-top:10px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback:</div>${renderReadingFeedback(S.genReadingFeedback)}<div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-secondary" onclick="S.genReading=null;S.genReadingQs=[];S.genReadingAnswers={};S.genReadingFeedback=null;render()">▶ Gerar outro texto</button><button class="btn btn-success" onclick="completeTask('reading');showTab('dashboard')">✓ Concluir Reading</button></div></div>`:`<button class="btn btn-primary btn-sm" onclick="submitGenReading()" ${S.genReadingFeedbackLoading?"disabled":""}>${S.genReadingFeedbackLoading?"⏳...":"Verificar respostas"}</button>`}
     `:""}
   </div>`:""}
 </div>`;
