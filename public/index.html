@@ -480,7 +480,10 @@ function loadState(){
   if(!S.userVocab) S.userVocab=[];
   if(!S.savedSpeaking) S.savedSpeaking=[];
   if(!S.studyLog) S.studyLog={};
-  if(!S.sessionAccum) S.sessionAccum={listening:0,reading:0,speaking:0,vocabulary:0};
+  // sessionAccum e sessionTime são de sessão — sempre reiniciam ao carregar o app
+  S.sessionAccum={listening:0,reading:0,speaking:0,vocabulary:0};
+  S.sessionTime={listening:0,reading:0,speaking:0,vocabulary:0};
+  S.sessionStart=null;
   buildReviewQueue();
 }
 
@@ -745,16 +748,55 @@ function P_READING(topic,level){
 }
 
 function P_READING_QUESTIONS(text,level){
-  const lang=LANG(level);
-  return `You are an EFL teacher creating comprehension questions for a ${level} learner.\n\nTEXT: "${text}"\n\nWrite exactly 3 questions. Rules:\n- Question 1: literal comprehension (found directly in text)\n- Question 2: inference (requires thinking beyond the text)\n- Question 3: personal connection ("What about you?" or "Have you ever...?")\n- For ${level}: use ${lang} for any clarifying notes but questions in English\n- Questions must be answerable with 1-3 sentences\n- Do NOT number them with Q1/Q2/Q3 — just list them\n\nReturn ONLY a JSON array of 3 question strings. Example: ["Q?","Q?","Q?"]`;
+  return `You are an EFL teacher creating comprehension questions for a ${level} learner.
+
+TEXT: "${text}"
+
+Write exactly 3 questions following these rules:
+- Question 1: literal comprehension — answer found directly in the text
+- Question 2: inference — student must think beyond the text
+- Question 3: personal connection — starts with "Have you ever..." or "What about you..."
+- ALL 3 questions must be 100% in English — NO Portuguese words, NO translations, NO bilingual text
+- Questions must be short and clear — max 15 words each
+- Do NOT add explanations, translations, or parenthetical notes in any language
+
+Return ONLY a valid JSON array of 3 strings. Example: ["Q1?","Q2?","Q3?"]`;
 }
 
-// [FIX P-reading-pt] P_READING_FEEDBACK: explicit instruction for encouragement language
+
 function P_READING_FEEDBACK(text,questions,answers,hints,level){
   const lang=LANG(level);
-  const qa=questions.map((q,i)=>`Question ${i+1}: ${q}\nStudent's answer: ${answers[i]||"(no answer)"}\nExpected: ${hints[i]||""}`).join("\n\n");
-  return `You are a direct EFL teacher reviewing a ${level} student's reading comprehension.\n\nTEXT (first 100 chars): "${text.substring(0,100)}..."\n\n${qa}\n\nFor EACH question use this EXACT format:\n\n[Q1] ✅ Correct / ❌ Incorrect\n→ Why: [one sentence in ${lang} — be specific about what was right or wrong]\n→ Model answer: [complete, well-written answer in English appropriate for ${level}]\n${level==="Beginner"||level==="Basic"?`→ Tip: [one grammar or vocabulary tip in ${lang}]`:"→ Better: [how to make the answer even more sophisticated]"}\n\n[Q2] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\n[Q3] ✅ Correct / ❌ Incorrect\n→ Why: ...\n→ Model answer: ...\n→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...\n\nTotal under 220 words. Do NOT add any motivational closing sentence or encouragement at the end.`;
+  const qa=questions.map((q,i)=>`Question ${i+1}: ${q}\nStudent answer: ${answers[i]||"(no answer)"}`).join("\n\n");
+  return `You are a direct EFL teacher reviewing a ${level} student's reading comprehension.
+
+TEXT (first 120 chars): "${text.substring(0,120)}..."
+
+${qa}
+
+For EACH question use this EXACT format — no deviations:
+
+[Q1] ✅ Correct / ❌ Incorrect
+→ Why: [one sentence in ${lang} explaining what was right or wrong]
+→ Model answer: [a complete, natural answer in English ONLY — never include Portuguese in the model answer]
+→ ${level==="Beginner"||level==="Basic"?`Tip: [one short grammar or vocabulary tip in ${lang}]`:"Better: [one way to make the answer more sophisticated]"}
+
+[Q2] ✅ Correct / ❌ Incorrect
+→ Why: ...
+→ Model answer: ...
+→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...
+
+[Q3] ✅ Correct / ❌ Incorrect
+→ Why: ...
+→ Model answer: ...
+→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...
+
+RULES:
+- Model answer must ALWAYS be in English only
+- Why and Tip/Better must be in ${lang}
+- Total under 220 words
+- Do NOT add any closing sentence, praise, or encouragement`;
 }
+
 
 function P_VOCAB_GENERATE(topic,level){
   return `You are an EFL vocabulary specialist creating flashcard content for ${level} learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nTOPIC: "${topic}" (if in Portuguese, use the English equivalent)\n\nGenerate exactly 6 vocabulary items relevant to "${topic}" for ${level} level.\nMix: 3 single words + 3 multi-word expressions (chunks/phrasal verbs).\n\nFor each item:\n- "word": the English word or phrase\n- "pt": natural Brazilian Portuguese translation (not literal)\n- "sentence": one example sentence in English (follow vocabulary rule above)\n- "sentencePt": Brazilian Portuguese translation of the sentence\n- "chunk": true if multi-word, false if single word\n- "tip": one very short memory tip or usage note in ${LANG(level)} (max 8 words)\n\nReturn ONLY valid JSON array. No markdown, no explanation:\n[{"word":"...","pt":"...","sentence":"...","sentencePt":"...","chunk":false,"tip":"..."}]`;
