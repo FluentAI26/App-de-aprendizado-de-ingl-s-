@@ -63,8 +63,6 @@ body{font-family:'DM Sans',sans-serif;background:#08080f;color:#e2e0f0;min-heigh
 .perf-bar{display:flex;align-items:center;gap:10px;margin-bottom:9px}
 .perf-label{width:82px;font-size:12px;color:#888}
 .perf-pct{width:30px;font-size:12px;color:#666;text-align:right}
-.flashcard{background:#0f0f1a;border:1px solid #2d2a40;border-radius:16px;min-height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .25s;padding:26px;text-align:center;margin-bottom:14px;user-select:none}
-.flashcard:hover{border-color:#5b21b6}
 .chat-area{overflow-y:auto;background:#07070f;border-radius:13px;border:1px solid #1a1828;padding:14px;min-height:220px;max-height:380px;display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
 .bubble{max-width:84%;padding:10px 14px;border-radius:13px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;position:relative}
 .bubble-user{background:#1e1a2e;color:#c4b5fd;border-bottom-right-radius:4px;align-self:flex-end}
@@ -88,9 +86,6 @@ body{font-family:'DM Sans',sans-serif;background:#08080f;color:#e2e0f0;min-heigh
 .level-dot{width:9px;height:9px;border-radius:50%}
 .text-box{background:#07070f;border:1px solid #1a1828;border-radius:10px;padding:14px;line-height:1.8;font-size:14px;color:#c4b5fd;margin-bottom:12px}
 .chunk-item{display:flex;align-items:center;gap:10px;padding:9px 13px;background:#0c0c18;border-radius:10px;border:1px solid #1a1828;margin-bottom:7px}
-.review-card{background:#0f0f1a;border:1px solid #2d2a40;border-radius:16px;min-height:155px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;margin-bottom:14px;cursor:pointer;transition:border-color .2s}
-.review-card:hover{border-color:#5b21b6}
-.srs-info{background:#07070f;border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid #1a1828}
 .topic-btn{background:#141222;border:1px solid #2d2a40;color:#a78bfa;border-radius:8px;padding:6px 12px;font-size:11px;font-family:inherit;cursor:pointer;transition:all .2s}
 .topic-btn:hover{background:#1e1a2e;border-color:#5b21b6}
 .topic-btn.sel{background:#1e1a2e;border-color:#7c3aed;color:#c4b5fd}
@@ -107,7 +102,6 @@ body{font-family:'DM Sans',sans-serif;background:#08080f;color:#e2e0f0;min-heigh
 .lesson-step{background:#0c0c18;border:1px solid #1a1828;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:all .2s}
 .lesson-step.active{border-color:#5b21b6;background:#0f0a1e}
 .lesson-step.done{border-color:#065f46;background:#031710}
-/* ── Speaking Feedback (melhorado) ── */
 .fb-card{border-radius:12px;overflow:hidden;margin-bottom:10px}
 .fb-main{padding:13px 15px;cursor:default}
 .fb-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
@@ -124,8 +118,6 @@ body{font-family:'DM Sans',sans-serif;background:#08080f;color:#e2e0f0;min-heigh
 .fb-followup{background:#0f0a1e;border:1px solid #3d1d6b;border-radius:10px;padding:12px 14px;margin-top:8px}
 .fb-followup-label{font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
 .fb-followup-text{font-size:13px;color:#c4b5fd;line-height:1.6}
-
-/* ── Loading skeleton ── */
 @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
 .skeleton{background:#141222;border-radius:8px;overflow:hidden;position:relative}
 .skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,#1e1a2e 50%,transparent 100%);background-size:600px 100%;animation:shimmer 1.4s infinite}
@@ -206,7 +198,6 @@ body{font-family:'DM Sans',sans-serif;background:#08080f;color:#e2e0f0;min-heigh
 <script>
 const LEVELS=["Beginner","Basic","Pre-Intermediate","Intermediate","Upper-Intermediate","Advanced"];
 const TOPICS=["trabalho","viagem","tecnologia","família","saúde","comida","esportes","educação","natureza","entretenimento","negócios","cultura","ciência","política","arte"];
-// Mapa PT→EN para tópicos pré-definidos — garante que a IA nunca receba palavras em PT
 const TOPIC_EN={"trabalho":"work","viagem":"travel","tecnologia":"technology","família":"family","saúde":"health","comida":"food","esportes":"sports","educação":"education","natureza":"nature","entretenimento":"entertainment","negócios":"business","cultura":"culture","ciência":"science","política":"politics","arte":"art"};
 function translateTopic(t){ return TOPIC_EN[t.trim().toLowerCase()]||t; }
 const TIME_OPTIONS=[
@@ -215,173 +206,13 @@ const TIME_OPTIONS=[
   {total:90,l:{listening:30,reading:20,speaking:25,vocabulary:15}},
 ];
 
-const VOCAB={
-  Beginner:[
-    {id:1,word:"I think that...",pt:"Eu acho que...",sentence:"I think that English is important.",chunk:true,cat:"daily"},
-    {id:2,word:"I would like to...",pt:"Eu gostaria de...",sentence:"I would like to travel to London.",chunk:true,cat:"daily"},
-    {id:3,word:"What do you mean?",pt:"O que você quer dizer?",sentence:"What do you mean by that?",chunk:true,cat:"daily"},
-    {id:4,word:"By the way",pt:"A propósito",sentence:"By the way, did you see the news?",chunk:true,cat:"daily"},
-    {id:5,word:"understand",pt:"entender",sentence:"Do you understand the question?",chunk:false,cat:"daily"},
-    {id:6,word:"important",pt:"importante",sentence:"It is important to practice every day.",chunk:false,cat:"daily"},
-    {id:7,word:"remember",pt:"lembrar",sentence:"I remember my first day at school.",chunk:false,cat:"daily"},
-    {id:8,word:"Make sure",pt:"Certifique-se",sentence:"Make sure you practice every day.",chunk:true,cat:"daily"},
-    {id:9,word:"How are you?",pt:"Como você está?",sentence:"How are you? I'm fine, thank you!",chunk:true,cat:"daily"},
-    {id:10,word:"Nice to meet you",pt:"Prazer em te conhecer",sentence:"Nice to meet you, my name is Carlos.",chunk:true,cat:"daily"},
-    {id:11,word:"Can you help me?",pt:"Você pode me ajudar?",sentence:"Can you help me with this exercise?",chunk:true,cat:"daily"},
-    {id:12,word:"I don't know",pt:"Eu não sei",sentence:"I don't know the answer to that question.",chunk:true,cat:"daily"},
-    {id:13,word:"please",pt:"por favor",sentence:"Can you repeat that, please?",chunk:false,cat:"daily"},
-    {id:14,word:"sorry",pt:"desculpe",sentence:"Sorry, I didn't hear you.",chunk:false,cat:"daily"},
-    {id:15,word:"again",pt:"de novo / novamente",sentence:"Can you say that again, please?",chunk:false,cat:"daily"},
-  ],
-  Basic:[
-    {id:16,word:"As far as I know",pt:"Até onde sei",sentence:"As far as I know, the meeting is at 3pm.",chunk:true,cat:"work"},
-    {id:17,word:"Let me think about it",pt:"Deixa eu pensar",sentence:"Let me think about it and get back to you.",chunk:true,cat:"work"},
-    {id:18,word:"opportunity",pt:"oportunidade",sentence:"This is a great opportunity to learn.",chunk:false,cat:"work"},
-    {id:19,word:"experience",pt:"experiência",sentence:"I have experience in marketing.",chunk:false,cat:"work"},
-    {id:20,word:"challenge",pt:"desafio",sentence:"Learning a language is a big challenge.",chunk:false,cat:"daily"},
-    {id:21,word:"definitely",pt:"definitivamente",sentence:"I definitely want to improve my English.",chunk:false,cat:"daily"},
-    {id:22,word:"What about you?",pt:"E você?",sentence:"I love coffee. What about you?",chunk:true,cat:"daily"},
-    {id:23,word:"actually",pt:"na verdade",sentence:"Actually, I prefer tea to coffee.",chunk:false,cat:"daily"},
-    {id:24,word:"probably",pt:"provavelmente",sentence:"I will probably arrive late today.",chunk:false,cat:"daily"},
-    {id:25,word:"I need to...",pt:"Eu preciso...",sentence:"I need to finish this report by Friday.",chunk:true,cat:"work"},
-    {id:26,word:"Would you mind?",pt:"Você se importaria?",sentence:"Would you mind closing the window?",chunk:true,cat:"daily"},
-    {id:27,word:"That sounds good",pt:"Isso soa bem / Boa ideia",sentence:"That sounds good! Let's do it.",chunk:true,cat:"daily"},
-    {id:28,word:"benefit",pt:"benefício",sentence:"Exercise has many health benefits.",chunk:false,cat:"daily"},
-    {id:29,word:"suggest",pt:"sugerir",sentence:"I suggest we take a short break.",chunk:false,cat:"work"},
-    {id:30,word:"improve",pt:"melhorar",sentence:"I want to improve my English skills.",chunk:false,cat:"daily"},
-  ],
-  "Pre-Intermediate":[
-    {id:31,word:"It depends on...",pt:"Depende de...",sentence:"It depends on the situation.",chunk:true,cat:"daily"},
-    {id:32,word:"To be honest",pt:"Para ser honesto",sentence:"To be honest, I prefer working from home.",chunk:true,cat:"work"},
-    {id:33,word:"manage",pt:"conseguir/gerenciar",sentence:"I can't manage to finish on time.",chunk:false,cat:"work"},
-    {id:34,word:"available",pt:"disponível",sentence:"Is the room available on Friday?",chunk:false,cat:"travel"},
-    {id:35,word:"On the other hand",pt:"Por outro lado",sentence:"On the other hand, it can be difficult.",chunk:true,cat:"daily"},
-    {id:36,word:"deal with",pt:"lidar com",sentence:"How do you deal with stress at work?",chunk:true,cat:"work"},
-    {id:37,word:"point out",pt:"apontar / destacar",sentence:"I'd like to point out a few issues.",chunk:true,cat:"work"},
-    {id:38,word:"look forward to",pt:"aguardar ansiosamente",sentence:"I look forward to meeting you.",chunk:true,cat:"work"},
-    {id:39,word:"significant",pt:"significativo",sentence:"There was a significant improvement.",chunk:false,cat:"work"},
-    {id:40,word:"although",pt:"embora / ainda que",sentence:"Although it was hard, we finished on time.",chunk:false,cat:"daily"},
-    {id:41,word:"meanwhile",pt:"enquanto isso",sentence:"Meanwhile, the team worked on the design.",chunk:false,cat:"work"},
-    {id:42,word:"achieve",pt:"alcançar / conquistar",sentence:"She worked hard to achieve her goals.",chunk:false,cat:"daily"},
-    {id:43,word:"I'm not sure, but...",pt:"Não tenho certeza, mas...",sentence:"I'm not sure, but I think it's correct.",chunk:true,cat:"daily"},
-    {id:44,word:"As a result",pt:"Como resultado",sentence:"As a result, sales increased by 20%.",chunk:true,cat:"work"},
-    {id:45,word:"put off",pt:"adiar",sentence:"We had to put off the meeting until Friday.",chunk:true,cat:"work"},
-  ],
-  Intermediate:[
-    {id:46,word:"Come across",pt:"Encontrar/dar com",sentence:"I came across an interesting article today.",chunk:true,cat:"daily"},
-    {id:47,word:"In terms of",pt:"Em termos de",sentence:"In terms of salary, the job is great.",chunk:true,cat:"work"},
-    {id:48,word:"Nevertheless",pt:"No entanto",sentence:"The project was hard. Nevertheless, we succeeded.",chunk:false,cat:"work"},
-    {id:49,word:"Substantial",pt:"Substancial",sentence:"There has been a substantial improvement.",chunk:false,cat:"work"},
-    {id:50,word:"Bear in mind",pt:"Tenha em mente",sentence:"Bear in mind that deadlines are strict.",chunk:true,cat:"work"},
-    {id:51,word:"run into",pt:"encontrar por acaso / topar com",sentence:"I ran into my old colleague at the airport.",chunk:true,cat:"daily"},
-    {id:52,word:"take for granted",pt:"dar como garantido",sentence:"Don't take your health for granted.",chunk:true,cat:"daily"},
-    {id:53,word:"compelling",pt:"convincente / irresistível",sentence:"She made a compelling argument.",chunk:false,cat:"work"},
-    {id:54,word:"ambiguous",pt:"ambíguo",sentence:"The instructions were ambiguous.",chunk:false,cat:"work"},
-    {id:55,word:"prior to",pt:"antes de / anterior a",sentence:"Please review the document prior to the meeting.",chunk:true,cat:"work"},
-    {id:56,word:"shed light on",pt:"esclarecer / iluminar",sentence:"The report sheds light on the real causes.",chunk:true,cat:"work"},
-    {id:57,word:"in retrospect",pt:"retrospectivamente / olhando para trás",sentence:"In retrospect, I should have asked more questions.",chunk:true,cat:"daily"},
-    {id:58,word:"coherent",pt:"coerente",sentence:"The strategy needs to be more coherent.",chunk:false,cat:"work"},
-    {id:59,word:"advocate for",pt:"defender / defender a causa de",sentence:"She advocates for equal education opportunities.",chunk:true,cat:"daily"},
-    {id:60,word:"turn out",pt:"acabar / revelar-se",sentence:"It turned out to be a great decision.",chunk:true,cat:"daily"},
-  ],
-  "Upper-Intermediate":[
-    {id:61,word:"Notwithstanding",pt:"Apesar de",sentence:"Notwithstanding the challenges, we succeeded.",chunk:false,cat:"work"},
-    {id:62,word:"It's worth noting that",pt:"Vale notar que",sentence:"It's worth noting that results may vary.",chunk:true,cat:"work"},
-    {id:63,word:"Inherently",pt:"Inerentemente",sentence:"The problem is inherently complex.",chunk:false,cat:"daily"},
-    {id:64,word:"Take into account",pt:"Levar em conta",sentence:"We need to take several factors into account.",chunk:true,cat:"work"},
-    {id:65,word:"Nuanced",pt:"Matizado/sutil",sentence:"The issue requires a nuanced approach.",chunk:false,cat:"daily"},
-    {id:66,word:"by virtue of",pt:"em virtude de / por conta de",sentence:"She succeeded by virtue of hard work.",chunk:true,cat:"work"},
-    {id:67,word:"call into question",pt:"questionar / colocar em dúvida",sentence:"The results call the theory into question.",chunk:true,cat:"work"},
-    {id:68,word:"ramification",pt:"ramificação / consequência",sentence:"The ramifications of this decision are serious.",chunk:false,cat:"work"},
-    {id:69,word:"mitigate",pt:"mitigar / reduzir",sentence:"These measures help mitigate the risk.",chunk:false,cat:"work"},
-    {id:70,word:"in lieu of",pt:"em vez de / no lugar de",sentence:"She took time off in lieu of overtime pay.",chunk:true,cat:"work"},
-    {id:71,word:"bring to fruition",pt:"concretizar / fazer acontecer",sentence:"It took years to bring the project to fruition.",chunk:true,cat:"work"},
-    {id:72,word:"at the expense of",pt:"às custas de",sentence:"Growth came at the expense of quality.",chunk:true,cat:"work"},
-    {id:73,word:"proliferate",pt:"proliferar",sentence:"Misinformation continues to proliferate online.",chunk:false,cat:"daily"},
-    {id:74,word:"ostensibly",pt:"aparentemente / supostamente",sentence:"Ostensibly, the policy was meant to help.",chunk:false,cat:"daily"},
-    {id:75,word:"corroborate",pt:"corroborar / confirmar",sentence:"New evidence corroborated her account.",chunk:false,cat:"work"},
-  ],
-  Advanced:[
-    {id:76,word:"Predicated on",pt:"Baseado em / fundamentado em",sentence:"The argument is predicated on false assumptions.",chunk:true,cat:"work"},
-    {id:77,word:"Paradigm shift",pt:"Mudança de paradigma",sentence:"This discovery represents a paradigm shift.",chunk:false,cat:"work"},
-    {id:78,word:"Convoluted",pt:"Complicado/confuso",sentence:"The instructions were unnecessarily convoluted.",chunk:false,cat:"daily"},
-    {id:79,word:"By the same token",pt:"Da mesma forma",sentence:"By the same token, rules apply to everyone.",chunk:true,cat:"daily"},
-    {id:80,word:"epistemology",pt:"epistemologia",sentence:"Epistemology is the philosophical study of knowledge.",chunk:false,cat:"daily"},
-    {id:81,word:"hegemony",pt:"hegemonia",sentence:"Cultural hegemony shapes public discourse.",chunk:false,cat:"daily"},
-    {id:82,word:"dialectic",pt:"dialética",sentence:"The dialectic between freedom and control is complex.",chunk:false,cat:"daily"},
-    {id:83,word:"excoriate",pt:"criticar severamente",sentence:"Critics excoriated the government's response.",chunk:false,cat:"daily"},
-    {id:84,word:"pellucid",pt:"claro / cristalino",sentence:"Her argument was pellucid and well-structured.",chunk:false,cat:"work"},
-    {id:85,word:"tendentious",pt:"tendencioso",sentence:"The report was criticized for being tendentious.",chunk:false,cat:"work"},
-    {id:86,word:"inimical to",pt:"prejudicial a / contrário a",sentence:"This policy is inimical to innovation.",chunk:true,cat:"work"},
-    {id:87,word:"sui generis",pt:"único em seu gênero",sentence:"Her artistic style is truly sui generis.",chunk:false,cat:"daily"},
-    {id:88,word:"caveat",pt:"ressalva / advertência",sentence:"There is one important caveat to this argument.",chunk:false,cat:"work"},
-    {id:89,word:"apropos",pt:"a propósito / pertinente",sentence:"Your comment is quite apropos to this discussion.",chunk:false,cat:"daily"},
-    {id:90,word:"belie",pt:"contradizer / desmentir",sentence:"His calm exterior belied his inner anxiety.",chunk:false,cat:"daily"},
-  ],
-};
-
-const LISTENING={
-  Beginner:[
-    {id:1,title:"Daily Routine",text:"My name is Ana. I wake up at 7am. I eat breakfast and drink coffee. Then I go to work by bus. I work from 9 to 5. After work, I watch TV and read a book. I go to bed at 11pm.",accent:"American",questions:["What time does Ana wake up?","How does she go to work?","What does she do after work?"]},
-    {id:2,title:"At the Supermarket",text:"I need to buy some things today. I need milk, eggs, and bread. I also need fruits — apples and bananas. The supermarket is near my house. It is open every day from 8am to 10pm.",accent:"British",questions:["What does the person need to buy?","Where is the supermarket?","What time does it open?"]},
-    {id:3,title:"My Weekend",text:"On weekends, I like to relax. On Saturday morning, I sleep late. Then I have a big breakfast. In the afternoon, I go for a walk in the park. On Sunday, I visit my family. We eat lunch together.",accent:"American",questions:["What does the person do on Saturday morning?","Where do they go in the afternoon?","Who do they visit on Sunday?"]},
-  ],
-  Basic:[
-    {id:1,title:"Talking About the Weekend",text:"Last weekend was really fun. On Saturday, I went to the park with my family. We had a picnic and played frisbee. On Sunday, I stayed home and cooked pasta for the first time. It was delicious!",accent:"American",questions:["What did they do on Saturday?","What did they cook on Sunday?","How was the pasta?"]},
-    {id:2,title:"At the Doctor",text:"I haven't been feeling well lately. I have a sore throat and a slight fever. My doctor told me to rest and drink plenty of fluids. She prescribed some antibiotics.",accent:"British",questions:["What symptoms does the person have?","What did the doctor say?","What was prescribed?"]},
-    {id:3,title:"Planning a Trip",text:"I'm planning a trip to Rio de Janeiro next month. I've already booked my flight and hotel. I want to visit the beaches and see the Christ the Redeemer statue. I hope to try traditional Brazilian food.",accent:"American",questions:["Where is the person going?","What have they already booked?","What do they want to see?"]},
-  ],
-  "Pre-Intermediate":[
-    {id:1,title:"Career Plans",text:"I've been thinking a lot about my career lately. I'm currently working as a marketing assistant, but I'd like to move into project management eventually. I've been taking online courses to improve my skills.",accent:"American",questions:["What is the person's current job?","What do they want to do in the future?","How are they preparing?"]},
-    {id:2,title:"Moving to a New City",text:"Moving to a new city can be both exciting and challenging. You have to find a new apartment, learn your way around, and build a new social network. But it can also be an amazing opportunity to reinvent yourself.",accent:"British",questions:["What are the challenges of moving?","What is the positive side?","What do you need to build?"]},
-    {id:3,title:"Technology and Work",text:"Remote work has completely changed how many people approach their careers. While some employees miss the social aspects of office life, others have found that working from home has dramatically improved their productivity.",accent:"American",questions:["What has remote work changed?","What do some employees miss?","What improved for others?"]},
-  ],
-  Intermediate:[
-    {id:1,title:"Technology in Daily Life",text:"It's hard to imagine life without technology nowadays. Most people rely on their smartphones for everything — from navigation to entertainment. While this offers incredible convenience, it also raises concerns about privacy and screen time.",accent:"British",questions:["What do people rely on smartphones for?","What are two concerns mentioned?","How does technology affect focus?"]},
-    {id:2,title:"The Psychology of Habits",text:"Habits shape approximately 40% of our daily actions. Every habit follows a loop: a cue, a routine, and a reward. Understanding this loop is the first step to changing unwanted behaviors and building better ones.",accent:"American",questions:["What percentage of actions are habits?","What are the three parts of a habit loop?","What does understanding the loop help with?"]},
-    {id:3,title:"Sustainable Living",text:"More people are choosing sustainable lifestyles. This includes reducing plastic consumption, buying locally sourced food, and using public transportation. Individual actions may seem small, but their collective impact can be significant.",accent:"British",questions:["Name two sustainable practices.","Why are individual actions important?","What lifestyle are more people choosing?"]},
-  ],
-  "Upper-Intermediate":[
-    {id:1,title:"Cognitive Biases",text:"Our brains are wired with cognitive shortcuts that often lead to systematic errors in judgment. Confirmation bias leads us to seek information that confirms our existing beliefs. Understanding these biases is the first step toward making more rational decisions.",accent:"American",questions:["What are cognitive shortcuts?","What is confirmation bias?","What is the first step to better decisions?"]},
-    {id:2,title:"The Gig Economy",text:"The rise of platform-based work has fundamentally altered traditional employment relationships. While gig work offers flexibility, critics argue it shifts financial risks onto workers while corporations benefit from reduced labor costs.",accent:"British",questions:["What has gig work altered?","What benefit does it offer?","What do critics argue?"]},
-    {id:3,title:"AI Ethics",text:"As AI systems become more sophisticated, questions of accountability have moved to the forefront. When an algorithm makes a consequential decision, who is responsible when things go wrong? These questions require collaboration between technologists and policymakers.",accent:"American",questions:["What questions have emerged?","What is the accountability challenge?","What collaboration is needed?"]},
-  ],
-  Advanced:[
-    {id:1,title:"Geopolitical Shifts",text:"The post-Cold War international order is increasingly being challenged. The emergence of new powers, coupled with rising nationalism, suggests we are entering a period of significant geopolitical realignment that will reshape global institutions.",accent:"British",questions:["What is being challenged?","What factors are contributing?","What period are we entering?"]},
-    {id:2,title:"Neuroplasticity",text:"Contemporary neuroscience has overturned the assumption that the adult brain is essentially fixed. Research demonstrates that neural pathways continue to form and reorganize throughout life in response to experience and deliberate learning.",accent:"American",questions:["What assumption was overturned?","What continues throughout life?","What triggers neural reorganization?"]},
-    {id:3,title:"Philosophy of Language",text:"Language is not merely a tool for communication — it fundamentally shapes how we perceive reality. The Sapir-Whorf hypothesis suggests that the structure of a language influences its speakers' worldview, though the extent remains debated.",accent:"British",questions:["What does language do beyond communication?","What does the Sapir-Whorf hypothesis suggest?","What remains debated?"]},
-  ],
-};
-
-const READING={
-  Beginner:[
-    {id:1,title:"My Family",text:"I have a small family. My father's name is Carlos. My mother's name is Maria. I have one brother. His name is Pedro. We live in São Paulo. We like to eat together on Sundays. My mother cooks very well.",questions:["How many people are in the family?","Where do they live?","What do they like to do on Sundays?"],answers:["four","São Paulo","eat together"]},
-    {id:2,title:"My Job",text:"My name is Lucas. I am a teacher. I work at a school near my house. I teach English to children. I start work at 8am and finish at 4pm. I love my job. After work, I go to the gym.",questions:["What is Lucas's job?","What time does he start?","What does he do after work?"],answers:["teacher","8am","go to the gym"]},
-    {id:3,title:"A Day at the Beach",text:"Last Sunday, my family went to the beach. The sun was warm and the water was cold. We swam and played in the sand. My sister made a big sandcastle. We ate sandwiches for lunch. We returned home at 6pm.",questions:["When did they go?","What did the sister do?","What time did they go home?"],answers:["Sunday","made a sandcastle","6pm"]},
-  ],
-  Basic:[
-    {id:1,title:"A Trip to the Beach",text:"Last summer, my family and I went to the beach. We drove for two hours to get there. The water was warm and the sand was white. We built sandcastles and swam in the ocean. At night, we ate fresh seafood at a local restaurant.",questions:["How long did it take?","What did they do at the beach?","What did they eat at night?"],answers:["two hours","built sandcastles and swam","fresh seafood"]},
-    {id:2,title:"Learning a New Skill",text:"Last year, I decided to learn how to cook. I started by watching videos online and buying a simple cookbook. At first, I made many mistakes. But after practicing every day, I got much better and can now prepare full meals.",questions:["How did the person start?","What mistakes did they make at first?","How did they improve?"],answers:["watching videos and buying a cookbook","burned food and added too much salt","practicing every day"]},
-    {id:3,title:"My Neighborhood",text:"I live in a quiet neighborhood in the south part of the city. There is a supermarket, a bakery, and two cafes nearby. Most of my neighbors are friendly. I have lived here for five years and really enjoy it.",questions:["What kind of neighborhood?","What shops are nearby?","How long have they lived there?"],answers:["quiet","supermarket, bakery, two cafes","five years"]},
-  ],
-  "Pre-Intermediate":[
-    {id:1,title:"Remote Work Revolution",text:"The pandemic changed the way millions of people work. Many companies shifted to remote work almost overnight. While some employees struggled with isolation, others found they were more productive at home. Now, most companies offer some form of hybrid model.",questions:["What changed work habits?","What challenges did some employees face?","What model do most companies use now?"],answers:["the pandemic","isolation","hybrid model"]},
-    {id:2,title:"Social Media and Mental Health",text:"Research suggests a complex relationship between social media and mental health. While platforms can provide community, excessive use has been linked to anxiety and depression, particularly among teenagers. Experts recommend setting time limits and being mindful.",questions:["What positive aspect does social media offer?","What problems are linked to excessive use?","What do experts recommend?"],answers:["community and connection","anxiety and depression","setting time limits"]},
-    {id:3,title:"Urban Gardening",text:"Urban gardening is growing in popularity as city residents seek connection with nature. Community gardens transform unused lots into productive green spaces where neighbors grow vegetables and herbs. These spaces foster social bonds and provide mental health benefits.",questions:["Why is urban gardening popular?","What do community gardens transform?","What benefits do they provide?"],answers:["connection with nature","unused lots","social bonds and mental health"]},
-  ],
-  Intermediate:[
-    {id:1,title:"The Psychology of Habits",text:"Habits shape approximately 40% of our daily actions. According to MIT research, every habit follows a loop: a cue, a routine, and a reward. The cue triggers automatic mode. The routine is the behavior. The reward tells the brain whether this loop is worth repeating.",questions:["What percentage of actions are habits?","What are the three steps of the habit loop?","What does the reward do?"],answers:["40%","cue, routine, reward","tells brain if loop is worth repeating"]},
-    {id:2,title:"The Value of Deep Work",text:"The ability to focus deeply on cognitively demanding tasks has become increasingly rare and valuable. Knowledge workers who cultivate deep work habits consistently produce higher quality output in less time than those who work in fragmented, distracted ways.",questions:["What has become rare?","Who produces higher quality output?","How do deep workers compare?"],answers:["ability to focus deeply","deep workers","produce more in less time"]},
-    {id:3,title:"Emotional Intelligence at Work",text:"Emotional intelligence — the ability to recognize and manage emotions — is a stronger predictor of professional success than IQ alone. Leaders with high emotional intelligence build stronger teams, navigate conflict effectively, and create motivating environments.",questions:["What is emotional intelligence?","How does it compare to IQ?","What do emotionally intelligent leaders build?"],answers:["ability to recognize and manage emotions","stronger predictor of success","stronger teams"]},
-  ],
-  "Upper-Intermediate":[
-    {id:1,title:"Behavioral Economics",text:"Traditional economic theory assumes humans are rational agents who maximize their utility. Behavioral economics, pioneered by Kahneman and Tversky, challenges this by demonstrating that decision-making is systematically influenced by cognitive biases and social context.",questions:["What does traditional economics assume?","What did Kahneman and Tversky show?","What influences human decisions?"],answers:["humans are rational agents","humans are influenced by biases","cognitive biases and social context"]},
-    {id:2,title:"The Attention Economy",text:"Tech companies engineer their platforms to capture and hold human attention, since attention translates to advertising revenue. Algorithms are optimized for engagement — often amplifying emotionally provocative content. Critics argue this creates a conflict between profit and societal health.",questions:["Why do tech companies capture attention?","How are algorithms optimized?","What conflict do critics identify?"],answers:["it translates to advertising revenue","for engagement","between profit and societal health"]},
-  ],
-  Advanced:[
-    {id:1,title:"The Nature of Consciousness",text:"Consciousness remains one of the most profound problems in science. The 'hard problem,' as Chalmers articulated it, asks why physical brain processes give rise to subjective experience. Neuroscience can map neural correlates of conscious states, but cannot explain why there is 'something it is like' to have those states.",questions:["What is the 'hard problem'?","What can neuroscience map?","What can neuroscience not explain?"],answers:["why physical processes give rise to subjective experience","neural correlates","why there is subjective experience"]},
-    {id:2,title:"Post-Truth and Epistemology",text:"Misinformation in the digital age has provoked an epistemological crisis: how do individuals determine what is true? When institutions are mistrusted and algorithms create echo chambers, shared epistemic foundations erode. Rebuilding trust requires cultivating critical thinking and civic virtues.",questions:["What crisis has misinformation caused?","What happens when institutions are mistrusted?","What does rebuilding trust require?"],answers:["how to determine what is true","epistemic foundations erode","critical thinking and civic virtues"]},
-  ],
+const WORD_OF_DAY={
+  Beginner:[{word:"Hello",pt:"Olá",use:"Hello! My name is Ana."},{word:"Thank you",pt:"Obrigado(a)",use:"Thank you for your help!"},{word:"Please",pt:"Por favor",use:"Can you help me, please?"},{word:"Sorry",pt:"Desculpe",use:"Sorry, I don't understand."},{word:"Good",pt:"Bom/Boa",use:"It was a good day."}],
+  Basic:[{word:"Actually",pt:"Na verdade",use:"Actually, I prefer tea to coffee."},{word:"Probably",pt:"Provavelmente",use:"I will probably arrive late."},{word:"Suggest",pt:"Sugerir",use:"I suggest we take a break."},{word:"Realize",pt:"Perceber",use:"I didn't realize it was so late."},{word:"Manage",pt:"Conseguir",use:"Did you manage to finish on time?"}],
+  "Pre-Intermediate":[{word:"Nevertheless",pt:"No entanto",use:"It was hard. Nevertheless, we finished."},{word:"Consequently",pt:"Consequentemente",use:"He was late; consequently, he missed it."},{word:"Acknowledge",pt:"Reconhecer",use:"She acknowledged the mistake openly."},{word:"Distinct",pt:"Distinto",use:"There is a distinct difference between them."},{word:"Substantial",pt:"Substancial",use:"There was a substantial improvement."}],
+  Intermediate:[{word:"Scrutinize",pt:"Examinar",use:"We need to scrutinize the data carefully."},{word:"Mitigate",pt:"Mitigar",use:"These measures mitigate the risk."},{word:"Articulate",pt:"Expressar claramente",use:"She articulated her ideas clearly."},{word:"Nuanced",pt:"Matizado",use:"His analysis was very nuanced."},{word:"Proliferate",pt:"Proliferar",use:"Smartphones have proliferated rapidly."}],
+  "Upper-Intermediate":[{word:"Ostensible",pt:"Aparente",use:"The ostensible reason was budget cuts."},{word:"Substantiate",pt:"Comprovar",use:"Can you substantiate that claim?"},{word:"Circumvent",pt:"Contornar",use:"They tried to circumvent the rules."},{word:"Predicate",pt:"Basear",use:"The theory is predicated on that assumption."},{word:"Ramification",pt:"Ramificação",use:"The ramifications of this decision are serious."}],
+  Advanced:[{word:"Epistemology",pt:"Epistemologia",use:"Epistemology is the study of knowledge."},{word:"Hegemony",pt:"Hegemonia",use:"Cultural hegemony shapes public opinion."},{word:"Dialectic",pt:"Dialética",use:"The dialectic between freedom and security is complex."},{word:"Pellucid",pt:"Claro/cristalino",use:"Her argument was pellucid and well-structured."},{word:"Caveat",pt:"Ressalva",use:"There is one important caveat to consider."}],
 };
 
 const SPEAKING_PROMPTS={
@@ -393,13 +224,47 @@ const SPEAKING_PROMPTS={
   Advanced:["Critically examine the role of media in shaping political discourse.","Discuss tensions between individual freedom and collective responsibility.","Analyze how cognitive biases affect institutional decision-making.","What are the long-term societal implications of automation?","Examine the epistemological challenges posed by the information age."],
 };
 
-const WORD_OF_DAY={
-  Beginner:[{word:"Hello",pt:"Olá",use:"Hello! My name is Ana."},{word:"Thank you",pt:"Obrigado(a)",use:"Thank you for your help!"},{word:"Please",pt:"Por favor",use:"Can you help me, please?"},{word:"Sorry",pt:"Desculpe",use:"Sorry, I don't understand."},{word:"Good",pt:"Bom/Boa",use:"It was a good day."}],
-  Basic:[{word:"Actually",pt:"Na verdade",use:"Actually, I prefer tea to coffee."},{word:"Probably",pt:"Provavelmente",use:"I will probably arrive late."},{word:"Suggest",pt:"Sugerir",use:"I suggest we take a break."},{word:"Realize",pt:"Perceber",use:"I didn't realize it was so late."},{word:"Manage",pt:"Conseguir",use:"Did you manage to finish on time?"}],
-  "Pre-Intermediate":[{word:"Nevertheless",pt:"No entanto",use:"It was hard. Nevertheless, we finished."},{word:"Consequently",pt:"Consequentemente",use:"He was late; consequently, he missed it."},{word:"Acknowledge",pt:"Reconhecer",use:"She acknowledged the mistake openly."},{word:"Distinct",pt:"Distinto",use:"There is a distinct difference between them."},{word:"Substantial",pt:"Substancial",use:"There was a substantial improvement."}],
-  Intermediate:[{word:"Scrutinize",pt:"Examinar",use:"We need to scrutinize the data carefully."},{word:"Mitigate",pt:"Mitigar",use:"These measures mitigate the risk."},{word:"Articulate",pt:"Expressar claramente",use:"She articulated her ideas clearly."},{word:"Nuanced",pt:"Matizado",use:"His analysis was very nuanced."},{word:"Proliferate",pt:"Proliferar",use:"Smartphones have proliferated rapidly."}],
-  "Upper-Intermediate":[{word:"Ostensible",pt:"Aparente",use:"The ostensible reason was budget cuts."},{word:"Substantiate",pt:"Comprovar",use:"Can you substantiate that claim?"},{word:"Circumvent",pt:"Contornar",use:"They tried to circumvent the rules."},{word:"Predicate",pt:"Basear",use:"The theory is predicated on that assumption."},{word:"Ramification",pt:"Ramificação",use:"The ramifications of this decision are serious."}],
-  Advanced:[{word:"Epistemology",pt:"Epistemologia",use:"Epistemology is the study of knowledge."},{word:"Hegemony",pt:"Hegemonia",use:"Cultural hegemony shapes public opinion."},{word:"Dialectic",pt:"Dialética",use:"The dialectic between freedom and security is complex."},{word:"Pellucid",pt:"Claro/cristalino",use:"Her argument was pellucid and well-structured."},{word:"Caveat",pt:"Ressalva",use:"There is one important caveat to consider."}],
+const LISTENING={
+  Beginner:[
+    {id:1,title:"Daily Routine",text:"My name is Ana. I wake up at 7am. I eat breakfast and drink coffee. Then I go to work by bus. I work from 9 to 5. After work, I watch TV and read a book. I go to bed at 11pm.",accent:"American",questions:["What time does Ana wake up?","How does she go to work?","What does she do after work?"]},
+    {id:2,title:"At the Supermarket",text:"I need to buy some things today. I need milk, eggs, and bread. I also need fruits — apples and bananas. The supermarket is near my house. It is open every day from 8am to 10pm.",accent:"British",questions:["What does the person need to buy?","Where is the supermarket?","What time does it open?"]},
+  ],
+  Basic:[
+    {id:1,title:"Talking About the Weekend",text:"Last weekend was really fun. On Saturday, I went to the park with my family. We had a picnic and played frisbee. On Sunday, I stayed home and cooked pasta for the first time. It was delicious!",accent:"American",questions:["What did they do on Saturday?","What did they cook on Sunday?","How was the pasta?"]},
+  ],
+  "Pre-Intermediate":[
+    {id:1,title:"Career Plans",text:"I've been thinking a lot about my career lately. I'm currently working as a marketing assistant, but I'd like to move into project management eventually. I've been taking online courses to improve my skills.",accent:"American",questions:["What is the person's current job?","What do they want to do in the future?","How are they preparing?"]},
+  ],
+  Intermediate:[
+    {id:1,title:"Technology in Daily Life",text:"It's hard to imagine life without technology nowadays. Most people rely on their smartphones for everything — from navigation to entertainment. While this offers incredible convenience, it also raises concerns about privacy and screen time.",accent:"British",questions:["What do people rely on smartphones for?","What are two concerns mentioned?","How does technology affect focus?"]},
+  ],
+  "Upper-Intermediate":[
+    {id:1,title:"Cognitive Biases",text:"Our brains are wired with cognitive shortcuts that often lead to systematic errors in judgment. Confirmation bias leads us to seek information that confirms our existing beliefs. Understanding these biases is the first step toward making more rational decisions.",accent:"American",questions:["What are cognitive shortcuts?","What is confirmation bias?","What is the first step to better decisions?"]},
+  ],
+  Advanced:[
+    {id:1,title:"Geopolitical Shifts",text:"The post-Cold War international order is increasingly being challenged. The emergence of new powers, coupled with rising nationalism, suggests we are entering a period of significant geopolitical realignment that will reshape global institutions.",accent:"British",questions:["What is being challenged?","What factors are contributing?","What period are we entering?"]},
+  ],
+};
+
+const READING={
+  Beginner:[
+    {id:1,title:"My Family",text:"I have a small family. My father's name is Carlos. My mother's name is Maria. I have one brother. His name is Pedro. We live in São Paulo. We like to eat together on Sundays. My mother cooks very well.",questions:["How many people are in the family?","Where do they live?","What do they like to do on Sundays?"],answers:["four","São Paulo","eat together"]},
+  ],
+  Basic:[
+    {id:1,title:"A Trip to the Beach",text:"Last summer, my family and I went to the beach. We drove for two hours to get there. The water was warm and the sand was white. We built sandcastles and swam in the ocean. At night, we ate fresh seafood at a local restaurant.",questions:["How long did it take?","What did they do at the beach?","What did they eat at night?"],answers:["two hours","built sandcastles and swam","fresh seafood"]},
+  ],
+  "Pre-Intermediate":[
+    {id:1,title:"Remote Work Revolution",text:"The pandemic changed the way millions of people work. Many companies shifted to remote work almost overnight. While some employees struggled with isolation, others found they were more productive at home. Now, most companies offer some form of hybrid model.",questions:["What changed work habits?","What challenges did some employees face?","What model do most companies use now?"],answers:["the pandemic","isolation","hybrid model"]},
+  ],
+  Intermediate:[
+    {id:1,title:"The Psychology of Habits",text:"Habits shape approximately 40% of our daily actions. According to MIT research, every habit follows a loop: a cue, a routine, and a reward. The cue triggers automatic mode. The routine is the behavior. The reward tells the brain whether this loop is worth repeating.",questions:["What percentage of actions are habits?","What are the three steps of the habit loop?","What does the reward do?"],answers:["40%","cue, routine, reward","tells brain if loop is worth repeating"]},
+  ],
+  "Upper-Intermediate":[
+    {id:1,title:"Behavioral Economics",text:"Traditional economic theory assumes humans are rational agents who maximize their utility. Behavioral economics, pioneered by Kahneman and Tversky, challenges this by demonstrating that decision-making is systematically influenced by cognitive biases and social context.",questions:["What does traditional economics assume?","What did Kahneman and Tversky show?","What influences human decisions?"],answers:["humans are rational agents","humans are influenced by biases","cognitive biases and social context"]},
+  ],
+  Advanced:[
+    {id:1,title:"The Nature of Consciousness",text:"Consciousness remains one of the most profound problems in science. The 'hard problem,' as Chalmers articulated it, asks why physical brain processes give rise to subjective experience. Neuroscience can map neural correlates of conscious states, but cannot explain why there is 'something it is like' to have those states.",questions:["What is the 'hard problem'?","What can neuroscience map?","What can neuroscience not explain?"],answers:["why physical processes give rise to subjective experience","neural correlates","why there is subjective experience"]},
+  ],
 };
 
 let S={
@@ -407,25 +272,37 @@ let S={
   lastStudyDate:"",goalMonths:12,goalCustom:"",
   mission:{listening:false,reading:false,speaking:false,vocabulary:false},
   missionDate:"",
-  vocabSRS:{},userVocab:[],
   savedSpeaking:[],
+  // ── DECK (novo sistema Vocabulary) ──
+  deck:[],
+  deckView:"main",
+  addTab:"word",
+  wordInput:"",
+  wordCards:[],
+  wordLoading:false,
+  themeCards:[],
+  themeLoading:false,
+  manualFront:"",
+  manualBack:"",
+  studyQueue:[],
+  studyIdx:0,
+  studyFlipped:false,
+  studySessionDone:false,
+  // ────────────────────────────────────
   aiHistory:[],
   scores:{listening:50,speaking:40,reading:50,vocabulary:45},
   studyLog:{},
   tab:"dashboard",
   selListening:null,lisChecksMap:{},
   lisTopic:"",lisTopicCustom:"",genListening:null,genListeningText:"",genLoading:false,lisSpeed:1,
-  genListeningQs:[],lisAnswers:{},lisFeedback:null,lisAnsLoading:false,shadowActive:false,shadowCountdown:0,lessonSpeakInput:"",lessonMicActive:false,
+  genListeningQs:[],lisAnswers:{},lisFeedback:null,lisAnsLoading:false,shadowActive:false,shadowCountdown:0,
   speakRound:0,speakHistory:[],speakInput:"",speakFeedback:null,speakLoading:false,
   speakTopic:"",speakTopicCustom:"",speakGenPrompts:[],speakGenLoading:false,
   selReading:null,readIdx:0,readAnswers:{},readFeedback:null,readLoading:false,
   readTopic:"",readTopicCustom:"",genReading:null,genReadingQs:[],genReadingLoading:false,
   genReadingAnswers:{},genReadingFeedback:null,genReadingFeedbackLoading:false,
   clickedWord:null,clickedWordTrans:null,clickedWordLoading:false,
-  vocabIdx:0,vocabFlipped:false,vocabTopic:"",vocabTopicCustom:"",vocabGenWords:[],vocabGenLoading:false,
-  vocabFilter:"all",vocabCtxAnswer:"",vocabCtxFeedback:null,
-  vocabCustomWord:"",vocabCustomLoading:false,vocabCustomResult:null,
-  reviewFlipped:false,reviewQueue:[],reviewIdx:0,reviewExpressMode:false,
+  vocabFilter:"todos",
   aiInput:"",aiLoading:false,
   missionTimes:{listening:20,reading:15,speaking:15,vocabulary:10},
   missionTimeCustom:"",
@@ -450,7 +327,7 @@ function loadState(){
   if(raw){
     let parsed=null;
     try{ parsed=JSON.parse(raw); }catch(e){
-      console.warn("FluentAI: estado corrompido, ignorando dados salvos.",e);
+      console.warn("FluentAI: estado corrompido.",e);
       showToast("⚠️ Dados salvos corrompidos — progresso recente pode ter sido perdido.","#f87171");
     }
     if(parsed && typeof parsed==="object"){
@@ -465,26 +342,26 @@ function loadState(){
       }
       if(parsed.mission && typeof parsed.mission==="object" && !Array.isArray(parsed.mission)) safe.mission=parsed.mission;
       if(parsed.scores && typeof parsed.scores==="object" && !Array.isArray(parsed.scores)) safe.scores=parsed.scores;
-      if(parsed.vocabSRS && typeof parsed.vocabSRS==="object" && !Array.isArray(parsed.vocabSRS)) safe.vocabSRS=parsed.vocabSRS;
-      if(Array.isArray(parsed.userVocab)) safe.userVocab=parsed.userVocab;
       if(Array.isArray(parsed.savedSpeaking)) safe.savedSpeaking=parsed.savedSpeaking;
       if(parsed.studyLog && typeof parsed.studyLog==="object") safe.studyLog=parsed.studyLog;
       if(parsed.missionTimes && typeof parsed.missionTimes==="object") safe.missionTimes=parsed.missionTimes;
       if(Array.isArray(parsed.aiHistory)) safe.aiHistory=parsed.aiHistory;
-      if(Array.isArray(parsed.vocabGenWords)) safe.vocabGenWords=parsed.vocabGenWords;
       if(parsed.lisChecksMap && typeof parsed.lisChecksMap==="object") safe.lisChecksMap=parsed.lisChecksMap;
+      // DECK (novo)
+      if(Array.isArray(parsed.deck)) safe.deck=parsed.deck;
+      safe.deckView="main"; // sempre volta pra main ao reabrir
       Object.assign(S, parsed, safe);
     }
   }
   checkDayReset();
-  if(!S.userVocab) S.userVocab=[];
   if(!S.savedSpeaking) S.savedSpeaking=[];
   if(!S.studyLog) S.studyLog={};
-  // sessionAccum e sessionTime são de sessão — sempre reiniciam ao carregar o app
+  if(!S.deck) S.deck=[];
   S.sessionAccum={listening:0,reading:0,speaking:0,vocabulary:0};
   S.sessionTime={listening:0,reading:0,speaking:0,vocabulary:0};
   S.sessionStart=null;
-  buildReviewQueue();
+  S.wordCards=[]; S.themeCards=[];
+  S.studyFlipped=false; S.studySessionDone=false;
 }
 
 function saveState(){
@@ -493,15 +370,14 @@ function saveState(){
   }catch(e){
     if(e instanceof DOMException && (e.name==="QuotaExceededError"||e.name==="NS_ERROR_DOM_QUOTA_REACHED")){
       const keys=["genListening","genListeningText","genListeningQs","genReading","genReadingQs",
-                  "lessonData","speakGenPrompts","vocabCustomResult","lisFeedback","readFeedback",
-                  "genReadingFeedback","speakFeedback","clickedWordTrans"];
+                  "lessonData","speakGenPrompts","lisFeedback","readFeedback",
+                  "genReadingFeedback","speakFeedback","wordCards","themeCards"];
       keys.forEach(k=>{ if(S[k]!==undefined) S[k]=Array.isArray(S[k])?[]:null; });
       try{
         localStorage.setItem("fluentai_v4",JSON.stringify(S));
-        showToast("⚠️ Armazenamento quase cheio — cache da IA foi limpo. Seu progresso está salvo.","#fcd34d");
+        showToast("⚠️ Armazenamento quase cheio — cache da IA foi limpo.","#fcd34d");
       }catch(e2){
-        showToast("❌ Armazenamento cheio! Seu progresso não foi salvo. Libere espaço no navegador.","#f87171",6000);
-        console.error("FluentAI: falha crítica ao salvar estado.",e2);
+        showToast("❌ Armazenamento cheio! Libere espaço no navegador.","#f87171",6000);
       }
     }
   }
@@ -519,45 +395,23 @@ function showToast(msg,color,duration){
   setTimeout(()=>t.remove(), duration||4000);
 }
 
-let _lastCheckedDate = "";
+let _lastCheckedDate="";
 function checkDayReset(){
-  const today = new Date().toDateString();
-  if(_lastCheckedDate === today) return;
-  _lastCheckedDate = today;
-
-  if(S.lastStudyDate && S.lastStudyDate !== today){
-    const diff = Math.floor((new Date() - new Date(S.lastStudyDate)) / 864e5);
-    if(diff > 1 && S.streak > 0){
-      S.streak = 0;
-      saveState();
-      if(document.getElementById("content")?.classList.contains("ready")){
-        showToast("💔 Seu streak foi zerado — você não estudou ontem. Recomece hoje!","#f87171",5000);
-      }
-    }
+  const today=new Date().toDateString();
+  if(_lastCheckedDate===today) return;
+  _lastCheckedDate=today;
+  if(S.lastStudyDate && S.lastStudyDate!==today){
+    const diff=Math.floor((new Date()-new Date(S.lastStudyDate))/864e5);
+    if(diff>1 && S.streak>0){ S.streak=0; saveState(); }
   }
-
-  if(S.missionDate !== today){
-    S.mission = {listening:false,reading:false,speaking:false,vocabulary:false};
-    S.missionDate = today;
-    S.speakRound = 0; S.speakHistory = []; S.speakFeedback = null; S.speakInput = "";
-    S.sessionTime = {listening:0,reading:0,speaking:0,vocabulary:0};
-    S.sessionAccum = {listening:0,reading:0,speaking:0,vocabulary:0};
+  if(S.missionDate!==today){
+    S.mission={listening:false,reading:false,speaking:false,vocabulary:false};
+    S.missionDate=today;
+    S.speakRound=0; S.speakHistory=[]; S.speakFeedback=null; S.speakInput="";
+    S.sessionTime={listening:0,reading:0,speaking:0,vocabulary:0};
+    S.sessionAccum={listening:0,reading:0,speaking:0,vocabulary:0};
     saveState();
-    if(document.getElementById("content")?.classList.contains("ready")){
-      showToast("🌅 Novo dia! Missão de hoje reiniciada. Bora estudar?","#a78bfa",4000);
-      render();
-    }
   }
-}
-
-function buildReviewQueue(){
-  const now=Date.now();
-  if(S.reviewExpressMode){
-    const allV=[...Object.values(VOCAB).flat(),...S.vocabGenWords,...S.userVocab];
-    S.reviewQueue=allV.filter(v=>v).map(v=>v.id);
-    return;
-  }
-  S.reviewQueue=Object.entries(S.vocabSRS).filter(([,d])=>d.nextReview&&d.nextReview<=now).map(([id])=>parseInt(id));
 }
 
 function logStudy(tab){
@@ -618,17 +472,16 @@ function speakWithCallback(text,rate,onEnd){
 function startShadow(text,rate){
   if(!synth||!text) return;
   S.shadowActive=false; render();
-  speakWithCallback(text, rate, ()=>{
+  speakWithCallback(text,rate,()=>{
     S.shadowActive=true; S.shadowCountdown=3; render();
     const iv=setInterval(()=>{
       S.shadowCountdown--;
-      if(S.shadowCountdown<=0){
-        clearInterval(iv);
-        S.shadowActive=false; S.shadowCountdown=0; render();
-      } else { render(); }
+      if(S.shadowCountdown<=0){ clearInterval(iv); S.shadowActive=false; S.shadowCountdown=0; render(); }
+      else render();
     },1000);
   });
 }
+
 function initRec(onResult,onEnd){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return null;
   const r=new SR(); r.lang="en-US"; r.continuous=true; r.interimResults=false;
@@ -657,8 +510,7 @@ function toggleRec(inputId,statusId,btnId){
 let timerInterval=null;
 function startTimer(tab){
   stopTimer();
-  S.currentTimerTab=tab;
-  S.sessionStart=Date.now();
+  S.currentTimerTab=tab; S.sessionStart=Date.now();
   timerInterval=setInterval(()=>{
     if(!S.sessionStart) return;
     const elapsed=S.sessionAccum[tab]+Math.floor((Date.now()-S.sessionStart)/1000);
@@ -700,24 +552,11 @@ async function callAI(messages,level){
     return d.reply;
   }catch(e){
     clearTimeout(timer);
-    if(e.name==="AbortError")
-      throw Object.assign(new Error("\u23f1 A IA demorou demais para responder. Tente novamente."),{code:"TIMEOUT"});
-    if(e.code==="RATE_LIMIT"||e.message.includes("429"))
-      throw Object.assign(new Error("\u23f3 Muitas requisições. Aguarde alguns segundos e tente novamente."),{code:"RATE_LIMIT"});
-    if(e.code==="API_ERROR")
-      throw e;
-    if(e.name==="TypeError"||e.message.includes("Failed to fetch")||e.message.includes("NetworkError"))
-      throw Object.assign(new Error("\U0001f4f6 Sem conexão. Verifique sua internet e tente novamente."),{code:"NETWORK"});
-    console.error("FluentAI API error:",e);
-    throw Object.assign(new Error("\u274c Erro inesperado. Tente novamente."),{code:"UNKNOWN"});
+    if(e.name==="AbortError") throw Object.assign(new Error("⏱ A IA demorou demais. Tente novamente."),{code:"TIMEOUT"});
+    if(e.code==="RATE_LIMIT"||e.message.includes("429")) throw Object.assign(new Error("⏳ Muitas requisições. Aguarde e tente novamente."),{code:"RATE_LIMIT"});
+    if(e.code==="API_ERROR") throw e;
+    throw Object.assign(new Error("❌ Erro de conexão. Tente novamente."),{code:"UNKNOWN"});
   }
-}
-
-function showInlineError(containerId,msg,onRetry){
-  const el=document.getElementById(containerId);
-  if(!el) return;
-  const retryBtn=onRetry?"<button onclick=\""+onRetry+"\" style=\"margin-top:10px;background:#1e1a2e;border:1px solid #2d2a40;color:#a78bfa;border-radius:8px;padding:6px 14px;font-size:12px;font-family:inherit;cursor:pointer\">\u21ba Tentar novamente</button>":"";
-  el.innerHTML="<div style=\"background:#1f0e0e;border:1px solid #450a0a;border-radius:10px;padding:14px;text-align:center\"><div style=\"font-size:13px;color:#f87171;margin-bottom:4px\">"+msg+"</div>"+retryBtn+"</div>";
 }
 
 const LANG=lv=>["Beginner","Basic"].includes(lv)?"Portuguese":"English";
@@ -738,96 +577,39 @@ const LV_TOPICS={
   Advanced:"philosophy, epistemology, institutional analysis, policy critique, abstract reasoning",
 };
 
-// ─────────────────────────────────────────────────────────────
-// PROMPTS
-// ─────────────────────────────────────────────────────────────
+// ─── PROMPTS ──────────────────────────────────────────────────────
 
-// [FIX P18-ext] P_READING: added PT→EN topic translation instruction
 function P_READING(topic,level){
-  return `You are an expert EFL content writer creating reading material for ${level} English learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nTOPIC AREA: ${LV_TOPICS[level]}\nREQUESTED TOPIC: "${topic}"\n\nIMPORTANT: If the topic is in Portuguese or contains accented characters, translate it to English first before writing (e.g. "futebol" → "soccer", "natação" → "swimming").\n\nWrite a reading passage of exactly 100-130 words about "${topic}" (in English).\nRules:\n- Every sentence must be clear and natural\n- Repeat 2-3 key words from the topic naturally (this aids retention)\n- Use real-life, relatable situations\n- No bullet points, no headers — only flowing paragraphs\n- Do NOT start with "This text is about..." or any meta-statement\n- Write ONLY the passage text, nothing else`;
+  return `You are an expert EFL content writer creating reading material for ${level} English learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nREQUESTED TOPIC: "${topic}"\n\nIMPORTANT: If the topic is in Portuguese, translate it to English first.\n\nWrite a reading passage of exactly 100-130 words about "${topic}" (in English).\nRules:\n- Every sentence must be clear and natural\n- No bullet points, no headers — only flowing paragraphs\n- Do NOT start with any meta-statement\n- Write ONLY the passage text, nothing else`;
 }
 
 function P_READING_QUESTIONS(text,level){
-  return `You are an EFL teacher creating comprehension questions for a ${level} learner.
-
-TEXT: "${text}"
-
-Write exactly 3 questions following these rules:
-- Question 1: literal comprehension — answer found directly in the text
-- Question 2: inference — student must think beyond the text
-- Question 3: personal connection — starts with "Have you ever..." or "What about you..."
-- ALL 3 questions must be 100% in English — NO Portuguese words, NO translations, NO bilingual text
-- Questions must be short and clear — max 15 words each
-- Do NOT add explanations, translations, or parenthetical notes in any language
-
-Return ONLY a valid JSON array of 3 strings. Example: ["Q1?","Q2?","Q3?"]`;
+  return `You are an EFL teacher creating comprehension questions for a ${level} learner.\n\nTEXT: "${text}"\n\nWrite exactly 3 questions:\n- Question 1: literal comprehension\n- Question 2: inference\n- Question 3: personal connection — starts with "Have you ever..." or "What about you..."\n- ALL 3 questions must be 100% in English\n- Max 15 words each\n\nReturn ONLY a valid JSON array of 3 strings. Example: ["Q1?","Q2?","Q3?"]`;
 }
-
 
 function P_READING_FEEDBACK(text,questions,answers,hints,level){
   const lang=LANG(level);
   const qa=questions.map((q,i)=>`Question ${i+1}: ${q}\nStudent answer: ${answers[i]||"(no answer)"}`).join("\n\n");
-  return `You are a direct EFL teacher reviewing a ${level} student's reading comprehension.
-
-TEXT (first 120 chars): "${text.substring(0,120)}..."
-
-${qa}
-
-For EACH question use this EXACT format — no deviations:
-
-[Q1] ✅ Correct / ❌ Incorrect
-→ Why: [one sentence in ${lang} explaining what was right or wrong]
-→ Model answer: [a complete, natural answer in English ONLY — never include Portuguese in the model answer]
-→ ${level==="Beginner"||level==="Basic"?`Tip: [one short grammar or vocabulary tip in ${lang}]`:"Better: [one way to make the answer more sophisticated]"}
-
-[Q2] ✅ Correct / ❌ Incorrect
-→ Why: ...
-→ Model answer: ...
-→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...
-
-[Q3] ✅ Correct / ❌ Incorrect
-→ Why: ...
-→ Model answer: ...
-→ ${level==="Beginner"||level==="Basic"?"Tip:":"Better:"} ...
-
-RULES:
-- Model answer must ALWAYS be in English only
-- Why and Tip/Better must be in ${lang}
-- Total under 220 words
-- Do NOT add any closing sentence, praise, or encouragement`;
-}
-
-
-function P_VOCAB_GENERATE(topic,level){
-  return `You are an EFL vocabulary specialist creating flashcard content for ${level} learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\nTOPIC: "${topic}" (if in Portuguese, use the English equivalent)\n\nGenerate exactly 6 vocabulary items relevant to "${topic}" for ${level} level.\nMix: 3 single words + 3 multi-word expressions (chunks/phrasal verbs).\n\nFor each item:\n- "word": the English word or phrase\n- "pt": natural Brazilian Portuguese translation (not literal)\n- "sentence": one example sentence in English (follow vocabulary rule above)\n- "sentencePt": Brazilian Portuguese translation of the sentence\n- "chunk": true if multi-word, false if single word\n- "tip": one very short memory tip or usage note in ${LANG(level)} (max 8 words)\n\nReturn ONLY valid JSON array. No markdown, no explanation:\n[{"word":"...","pt":"...","sentence":"...","sentencePt":"...","chunk":false,"tip":"..."}]`;
-}
-
-function P_VOCAB_CUSTOM(word,level){
-  return `You are an EFL teacher explaining the word/phrase "${word}" to a ${level} English learner.\n\nProvide:\n- "word": "${word}" (exact as given)\n- "pt": natural Brazilian Portuguese translation\n- "sentence": one example sentence in English (${LV_VOCAB[level].split(".")[0]})\n- "sentencePt": Brazilian Portuguese translation of the sentence\n- "chunk": ${word.trim().includes(" ")}\n- "tip": one memory trick or common context in ${LANG(level)} (max 10 words)\n- "collocations": array of 2 common collocations or related phrases\n\nReturn ONLY valid JSON. No markdown:\n{"word":"...","pt":"...","sentence":"...","sentencePt":"...","chunk":true/false,"tip":"...","collocations":["...","..."]}`;
+  return `You are a direct EFL teacher reviewing a ${level} student's reading comprehension.\n\nTEXT (first 120 chars): "${text.substring(0,120)}..."\n\n${qa}\n\nFor EACH question use this EXACT format:\n\n[Q1] ✅ Correct / ❌ Incorrect\n→ Why: [one sentence in ${lang}]\n→ Model answer: [complete answer in English ONLY]\n→ ${level==="Beginner"||level==="Basic"?`Tip: [tip in ${lang}]`:"Better: [more sophisticated version]"}\n\n[Q2]...\n[Q3]...\n\nRULES:\n- Model answer ALWAYS in English only\n- Why and Tip in ${lang}\n- Total under 220 words\n- Do NOT add closing sentence`;
 }
 
 function P_LISTENING_GENERATE(topic,level){
-  return `You are an EFL content creator. OUTPUT ONLY THE SPOKEN PASSAGE — no explanations, no labels, no meta-commentary, no notes about vocabulary level.
+  return `You are an EFL content creator. OUTPUT ONLY THE SPOKEN PASSAGE.\n\nWrite a natural spoken-English passage of 80-110 words about "${topic}" for ${level} learners.\n\nVOCABULARY RULE: ${LV_VOCAB[level]}\n\nIMPORTANT: If the topic is in Portuguese, translate it to English first. The passage must be 100% in English.\n\nRequirements:\n- Natural spoken rhythm\n- Include contractions (I'm, don't, it's)\n- Sound like someone talking\n- Real-life, relatable scenario\n\nOutput ONLY the passage text. Do not add any explanation after.`;
+}
 
-Write a natural spoken-English passage of 80-110 words about "${topic}" for ${level} learners.
+// ── NOVOS PROMPTS VOCABULARY ──────────────────────────────────────
 
-VOCABULARY RULE: ${LV_VOCAB[level]}
+function P_VOCAB_WORD_CARDS(word,level){
+  return `You are an EFL teacher creating flashcards for a ${level} English learner.\n\nThe student typed the word/phrase: "${word}"\n\nGenerate exactly 5 flashcard sentences using "${word}" in different real-life contexts.\nVocabulary rule: ${LV_VOCAB[level]}\n\nFor each card:\n- "front": a natural English sentence using "${word}"\n- "back": the natural Brazilian Portuguese translation of that sentence\n- "highlight": "${word}"\n\nRules:\n- Each sentence must show a DIFFERENT context or meaning\n- Sentences must be natural, not textbook-stiff\n- NO meta-commentary — ONLY the JSON\n\nReturn ONLY a valid JSON array of 5 objects:\n[{"front":"...","back":"...","highlight":"${word}"},...]`;
+}
 
-IMPORTANT: If the topic is in Portuguese or contains accented characters, translate it to English first before writing (e.g. "futebol" → "soccer", "natação" → "swimming"). The passage must be 100% in English.
-
-Requirements:
-- Natural spoken rhythm (short sentences)
-- Include contractions (I'm, don't, it's, can't)
-- Sound like someone talking, not writing
-- Real-life, relatable scenario
-- Repeat 1-2 key words naturally
-
-IMPORTANT: Output ONLY the passage text. Stop immediately after the last sentence. Do not add any explanation, note, or comment after the passage.`;
+function P_VOCAB_THEME_CARDS(theme,level){
+  return `You are an EFL teacher creating flashcards for a ${level} English learner.\n\nTheme: "${theme}"\n\nGenerate exactly 6 flashcard sentences related to "${theme}".\nVocabulary rule: ${LV_VOCAB[level]}\n\nIf the theme is in Portuguese, translate it to English first.\n\nFor each card:\n- "front": a natural English sentence about "${theme}"\n- "back": the natural Brazilian Portuguese translation\n- "highlight": the most important word or phrase in the sentence (1-3 words max)\n\nReturn ONLY a valid JSON array of 6 objects:\n[{"front":"...","back":"...","highlight":"..."},...]`;
 }
 
 function P_AI_COACH_SYSTEM(level){
   const lang=LANG(level);
-  return `You are FluentAI Coach, an expert English teacher for Brazilian Portuguese speakers at ${level} level.\n\nYOUR TEACHING STYLE:\n- Always correct grammar and vocabulary mistakes — never ignore errors\n- Give ONE clear explanation per correction (not multiple at once)\n- Always provide an example sentence after explaining a rule\n- Use ${lang} for explanations, English for examples and exercises\n- End EVERY response with a speaking challenge or follow-up question\n- Adapt complexity strictly to ${level}: ${LV_VOCAB[level]}\n\nWHEN STUDENT SENDS A SENTENCE TO CORRECT:\n1. ✅ Corrected: [fixed version]\n2. 💡 More natural: [how a native would say it]\n3. 📝 Rule: [the grammar/vocabulary rule, in ${lang}, max 2 sentences]\n4. 🗣️ Your turn: [follow-up question in ENGLISH — always in English regardless of level, and DIFFERENT from the previous question]\n\nWHEN STUDENT ASKS A QUESTION:\n- Answer directly and clearly\n- Give a concrete example immediately\n- Connect to real-life usage\n- End with a mini-exercise\n\nNEVER:\n- Give generic responses like "Great question!"\n- Translate entire sentences without teaching the pattern\n- Overwhelm with multiple rules at once\n- Use vocabulary above ${level} level without explanation`;
+  return `You are FluentAI Coach, an expert English teacher for Brazilian Portuguese speakers at ${level} level.\n\nYOUR TEACHING STYLE:\n- Always correct grammar and vocabulary mistakes\n- Give ONE clear explanation per correction\n- Always provide an example sentence after explaining a rule\n- Use ${lang} for explanations, English for examples\n- End EVERY response with a speaking challenge or follow-up question\n- Adapt complexity strictly to ${level}: ${LV_VOCAB[level]}\n\nWHEN STUDENT SENDS A SENTENCE TO CORRECT:\n1. ✅ Corrected: [fixed version]\n2. 💡 More natural: [how a native would say it]\n3. 📝 Rule: [the grammar/vocabulary rule in ${lang}, max 2 sentences]\n4. 🗣️ Your turn: [follow-up question in ENGLISH]\n\nNEVER give generic responses or overwhelm with multiple rules at once.`;
 }
 
 const TABS=[
@@ -841,11 +623,7 @@ const TABS=[
 
 function showTab(id){
   stopTimer();
-  // Opção B: ao entrar no Speaking, limpa feedback ativo mas mantém histórico
-  if(id==="speaking"){
-    S.speakFeedback=null; S.speakInput="";
-    const ta=document.getElementById("speakTextarea"); if(ta) ta.value="";
-  }
+  if(id==="speaking"){ S.speakFeedback=null; S.speakInput=""; }
   S.tab=id; render();
   if(["listening","speaking","reading","vocabulary"].includes(id)) startTimer(id);
 }
@@ -859,7 +637,8 @@ function render(){
   document.getElementById("xpVal").textContent=S.xp;
   document.getElementById("streakVal").textContent=S.streak;
   document.getElementById("userPill").textContent=S.userName?S.userName[0].toUpperCase():"⚙";
-const map={dashboard:renderDashboard,lesson:renderLesson,listening:renderListening,speaking:renderSpeaking,reading:renderReading,vocabulary:renderVocab,review:renderReview,ai:renderAI,evolucao:renderEvolucao,settings:renderSettings};  document.getElementById("content").innerHTML=(map[S.tab]||renderDashboard)();
+  const map={dashboard:renderDashboard,lesson:renderLesson,listening:renderListening,speaking:renderSpeaking,reading:renderReading,vocabulary:renderVocab,review:renderReview,ai:renderAI,evolucao:renderEvolucao,settings:renderSettings};
+  document.getElementById("content").innerHTML=(map[S.tab]||renderDashboard)();
   if(S.tab==="ai") setTimeout(()=>{const ca=document.getElementById("chatArea");if(ca)ca.scrollTop=ca.scrollHeight;},50);
 }
 
@@ -870,11 +649,7 @@ function greeting(){
 function globalPct(){ if(!S.goalMonths) return 0; const raw=Math.round((S.totalDays/(S.goalMonths*30))*100); return Math.min(100,S.xp>0?Math.max(1,raw):raw); }
 function getWordOfDay(){ const a=WORD_OF_DAY[S.level]||WORD_OF_DAY.Beginner; return a[new Date().getDate()%a.length]; }
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-
-function getActiveTopic(selKey,customKey){
-  const custom=(S[customKey]||"").trim();
-  return custom||S[selKey]||"";
-}
+function getActiveTopic(selKey,customKey){ const custom=(S[customKey]||"").trim(); return custom||S[selKey]||""; }
 
 function timerWidget(tabKey){
   const target=(S.missionTimes[tabKey]||15)*60;
@@ -887,7 +662,6 @@ function timerWidget(tabKey){
   </div>`;
 }
 
-// [FIX P-espaço] Removed extra space before <span class='topic-label'> in all 4 generation buttons
 function topicSelector(selKey,customKey,placeholder,genBtnId){
   const active=getActiveTopic(selKey,customKey);
   return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
@@ -895,19 +669,14 @@ function topicSelector(selKey,customKey,placeholder,genBtnId){
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
     <input class="inp" id="inp_${customKey}" style="flex:1" placeholder="${placeholder}" value="${esc(S[customKey])}"
-      oninput="
-        S['${customKey}']=this.value;
-        if(this.value.trim()) S['${selKey}']='';
-        const _lbl=document.getElementById('lbl_${customKey}');
-        const _val=this.value.trim();
-        if(_lbl) _lbl.innerHTML=_val?'Tema selecionado: <strong>'+_val+'</strong>':'';
-        const _btn=document.getElementById('${genBtnId||''}');
-        if(_btn){ _btn.disabled=!_val&&!S['${selKey}']; const _sp=_btn.querySelector('span.topic-label'); if(_sp&&_val) _sp.textContent=_val; }
-      "/>
+      oninput="S['${customKey}']=this.value;if(this.value.trim()) S['${selKey}']='';"/>
   </div>
-  <div id="lbl_${customKey}" style="font-size:12px;color:#a78bfa;margin-bottom:8px">${active?`Tema selecionado: <strong>${active}</strong>`:""}</div>`;
+  <div style="font-size:12px;color:#a78bfa;margin-bottom:8px">${active?`Tema: <strong>${active}</strong>`:""}</div>`;
 }
 
+// ══════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════════
 function renderDashboard(){
   const pct=globalPct(), mc=Object.values(S.mission).filter(Boolean).length;
   const wod=getWordOfDay(); const allDone=mc===4;
@@ -920,42 +689,26 @@ function renderDashboard(){
     const dayName=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()];
     return {key,studied,isToday,dayName,d};
   });
-  const totalWordsStudied=Object.keys(S.vocabSRS).length+(S.userVocab||[]).length;
-  const todayStudied=S.studyLog[new Date().toDateString()]?Object.keys(S.studyLog[new Date().toDateString()]).length:0;
 
   if(isNewUser) return `
 <div class="page-title">${greeting()}</div>
-<div class="page-sub">Bem-vindo ao FluentAI${S.userName?", "+S.userName:""}! Seu coach de inglês com IA adaptativa.</div>
+<div class="page-sub">Bem-vindo ao FluentAI! Seu coach de inglês com IA adaptativa.</div>
 <div style="background:#1a1630;border:1px solid #3d1d6b;border-radius:16px;padding:28px 24px;margin-bottom:14px;text-align:center">
   <div style="font-size:40px;margin-bottom:14px">🎓</div>
   <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#e2e0f0;margin-bottom:8px">Pronto para começar?</div>
-  <div style="font-size:13px;color:#888;line-height:1.7;margin-bottom:20px;max-width:320px;margin-left:auto;margin-right:auto">A Lição do Dia combina Listening, Vocabulário e Speaking em 15–20 min. É o melhor jeito de começar.</div>
+  <div style="font-size:13px;color:#888;line-height:1.7;margin-bottom:20px">A Lição do Dia combina Listening, Vocabulário e Speaking em 15–20 min.</div>
   <button class="btn btn-primary" style="font-size:15px;padding:12px 28px;margin-bottom:12px" onclick="showTab('lesson')">▶ Começar Lição do Dia</button>
   <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px">
-    <button class="btn btn-secondary btn-sm" onclick="showTab('listening')">◎ Listening</button>
-    <button class="btn btn-secondary btn-sm" onclick="showTab('speaking')">◈ Speaking</button>
-    <button class="btn btn-secondary btn-sm" onclick="showTab('vocabulary')">⊟ Vocabulário</button>
+    <button class="btn btn-secondary btn-sm" onclick="showTab('vocabulary')">⊟ Vocabulary</button>
     <button class="btn btn-secondary btn-sm" onclick="showTab('ai')">✦ AI Coach</button>
   </div>
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-  ${[
-    {icon:"◎",title:"Listening",desc:"Ouça textos reais e treine compreensão",tab:"listening",c:"#8b5cf6"},
-    {icon:"◈",title:"Speaking",desc:"Produza frases com feedback da IA",tab:"speaking",c:"#f59e0b"},
-    {icon:"≡",title:"Reading",desc:"Leia e responda perguntas de compreensão",tab:"reading",c:"#10b981"},
-    {icon:"⊟",title:"Vocabulary",desc:"Aprenda com repetição espaçada (SRS)",tab:"vocabulary",c:"#3b82f6"},
-  ].map(m=>`<div onclick="showTab('${m.tab}')" style="background:#0f0f1a;border:1px solid #1a1828;border-radius:12px;padding:16px;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='${m.c}'" onmouseout="this.style.borderColor='#1a1828'">
-    <div style="font-size:20px;color:${m.c};margin-bottom:8px">${m.icon}</div>
-    <div style="font-size:13px;font-weight:600;margin-bottom:4px">${m.title}</div>
-    <div style="font-size:11px;color:#6b7280;line-height:1.5">${m.desc}</div>
-  </div>`).join("")}
 </div>
 <div class="word-of-day">
   <div style="font-size:10px;color:#a78bfa;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">✦ Palavra do dia</div>
   <div style="font-size:24px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#e2e0f0;margin-bottom:4px">${wod.word}</div>
   <div style="font-size:13px;color:#f59e0b;margin-bottom:8px">🇧🇷 ${wod.pt}</div>
   <div style="font-size:13px;color:#888;font-style:italic;margin-bottom:12px">"${wod.use}"</div>
-  <button class="btn btn-secondary btn-sm" onclick="speak('${wod.word.replace(/'/g,"\'")}')">🔊 Ouvir pronúncia</button>
+  <button class="btn btn-secondary btn-sm" onclick="speak('${wod.word.replace(/'/g,"\\'")}')">🔊 Ouvir pronúncia</button>
 </div>`;
 
   return `
@@ -967,27 +720,20 @@ ${allDone?`<div class="celebrate"><div style="font-size:36px;margin-bottom:10px"
   <div style="font-size:24px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#e2e0f0;margin-bottom:4px">${wod.word}</div>
   <div style="font-size:13px;color:#f59e0b;margin-bottom:8px">🇧🇷 ${wod.pt}</div>
   <div style="font-size:13px;color:#888;font-style:italic;margin-bottom:12px">"${wod.use}"</div>
-  <button class="btn btn-secondary btn-sm" onclick="speak('${wod.word.replace(/'/g,"\'")}')">🔊 Ouvir pronúncia</button>
+  <button class="btn btn-secondary btn-sm" onclick="speak('${wod.word.replace(/'/g,"\\'")}')">🔊 Ouvir pronúncia</button>
 </div>
 <div class="stats-grid">
   ${[{v:`${pct}%`,l:"Progresso",s:S.goalMonths?S.goalMonths+" meses":"livre"},{v:`${S.streak}🔥`,l:"Streak",s:"dias seguidos"},{v:S.xp,l:"Total XP",s:"pontos"},{v:`${mc}/4`,l:"Missão hoje",s:"tarefas feitas"}].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
 </div>
-<div class="card" style="margin-bottom:14px">
+<div class="card">
   <div style="font-size:13px;font-weight:600;margin-bottom:12px">Atividade nos últimos 7 dias</div>
   <div style="display:flex;gap:6px;justify-content:space-between">
-    ${last7.map(d=>`<div class="activity-day" style="background:${d.studied?"#1e1a2e":d.isToday?"#141222":"#0c0c18"};border:1px solid ${d.studied?"#5b21b6":d.isToday?"#2d2a40":"#1a1828"}"><span style="font-size:9px;color:${d.studied?"#a78bfa":d.isToday?"#555":"#333"}">${d.dayName}</span><span style="font-size:11px">${d.studied?"✓":d.isToday?"·":"·"}</span></div>`).join("")}
-  </div>
-  <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
-    <span style="font-size:12px;color:#6b7280">Palavras estudadas: <strong style="color:#a78bfa">${totalWordsStudied}</strong></span>
-    <span style="font-size:12px;color:#6b7280">Módulos hoje: <strong style="color:#a78bfa">${todayStudied}</strong></span>
+    ${last7.map(d=>`<div class="activity-day" style="background:${d.studied?"#1e1a2e":d.isToday?"#141222":"#0c0c18"};border:1px solid ${d.studied?"#5b21b6":d.isToday?"#2d2a40":"#1a1828"}"><span style="font-size:9px;color:${d.studied?"#a78bfa":d.isToday?"#555":"#333"}">${d.dayName}</span><span style="font-size:11px">${d.studied?"✓":"·"}</span></div>`).join("")}
   </div>
 </div>
 ${S.goalMonths?`<div class="card">
   <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:13px;font-weight:500">Jornada até o próximo nível</span><span style="font-size:13px;color:#a78bfa">${pct}%</span></div>
   <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
-  <div class="levels-row" style="margin-top:10px">
-    ${LEVELS.map((l,i)=>`<div class="level-step"><div class="level-dot" style="background:${l===S.level?"#a78bfa":i<LEVELS.indexOf(S.level)?"#059669":"#2d2a40"}"></div><span style="font-size:9px;color:${l===S.level?"#a78bfa":"#444"};text-align:center">${l.replace("Pre-Intermediate","Pre").replace("Upper-Intermediate","Upper")}</span></div>`).join("")}
-  </div>
 </div>`:""}
 <div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -1008,16 +754,18 @@ ${S.goalMonths?`<div class="card">
 </div>`;
 }
 
+// ══════════════════════════════════════════════════════════════════
+// LESSON
+// ══════════════════════════════════════════════════════════════════
 function renderLesson(){
   const steps=[
     {key:"listen",icon:"◎",label:"Listening",desc:"Ouça e compreenda o texto"},
-    // [FIX P19-fix] Changed "Vocabulário" to "Vocabulary"
     {key:"vocab",icon:"⊟",label:"Vocabulary",desc:"Aprenda palavras do tema"},
     {key:"speak",icon:"◈",label:"Speaking",desc:"Produza frases sobre o tema"},
   ];
   return `
 <div class="page-title">▶ Lição do Dia</div>
-<div class="page-sub">Uma sequência guiada de 15-20 min combinando Listening + Vocabulário + Speaking sobre o mesmo tema.</div>
+<div class="page-sub">Uma sequência guiada de 15-20 min combinando Listening + Vocabulário + Speaking.</div>
 ${!S.lessonTopic?`
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:12px">Escolha o tema da lição de hoje:</div>
@@ -1035,7 +783,7 @@ ${!S.lessonTopic?`
     <span style="font-size:12px;color:#a78bfa;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Tema:</span>
     <span style="font-size:14px;color:#e2e0f0;margin-left:8px;font-weight:500">${S.lessonTopic}</span>
   </div>
-  <button class="btn btn-secondary btn-sm" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;S.lessonSpeakInput='';render()">✕ Encerrar</button>
+  <button class="btn btn-secondary btn-sm" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;render()">✕ Encerrar</button>
 </div>
 <div style="display:flex;gap:10px;margin-bottom:20px">
   ${steps.map((s,i)=>`
@@ -1051,7 +799,7 @@ ${S.lessonStep===0?`
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:12px">◎ Listening — ouça e compreenda</div>
   <div class="text-box">${esc(S.lessonData.text)}</div>
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+  <div style="display:flex;gap:8px;margin-bottom:14px">
     <button class="btn btn-primary btn-sm" onclick="speak('${(S.lessonData.text||"").replace(/'/g,"\\'").replace(/\n/g," ")}')">🔊 Ouvir</button>
   </div>
   <button class="btn btn-success" onclick="S.lessonStep=1;render()">Avançar para Vocabulary →</button>
@@ -1079,10 +827,8 @@ ${S.lessonStep===2?`
   <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap;align-items:center">
     <button class="btn btn-success" onclick="submitLessonSpeaking()">✓ Enviar e receber feedback</button>
     <button class="btn btn-secondary btn-sm" onclick="speak('${(S.lessonData.speakPrompt||"").replace(/'/g,"\\'")}')">🔊 Ouvir prompt</button>
-    <button class="btn btn-secondary btn-sm" id="lessonMicBtn" onclick="toggleLessonMic()" title="Falar em voz alta">🎤 Falar</button>
   </div>
-  <div id="lessonMicStatus" style="font-size:12px;color:#a78bfa;margin-top:6px;min-height:18px"></div>
-  ${S.lessonData.speakFeedback?`<div style="margin-top:14px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback do AI Coach:</div>${renderSpeakFeedback(S.lessonData.speakFeedback)}<button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;S.lessonSpeakInput='';completeTask('listening');completeTask('vocabulary');completeTask('speaking');render()">🎉 Concluir lição!</button></div>`:""}
+  ${S.lessonData.speakFeedback?`<div style="margin-top:14px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback do AI Coach:</div>${renderSpeakFeedback(S.lessonData.speakFeedback)}<button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;completeTask('listening');completeTask('vocabulary');completeTask('speaking');render()">🎉 Concluir lição!</button></div>`:""}
 </div>`:""}
 `:""}
 `}`;
@@ -1091,7 +837,7 @@ ${S.lessonStep===2?`
 async function startLesson(topic){
   S.lessonTopic=topic; S.lessonStep=0; S.lessonData=null; S.lessonLoading=true; S.lessonSpeakInput=""; render();
   try{
-    const p=`You are an EFL content creator. Create a structured English lesson about "${topic}" for ${S.level} level.\n\nCRITICAL RULES:\n- TOPIC LANGUAGE: The topic may be in Portuguese — always translate it to English before using it (e.g. "natação" → "swimming", "futebol" → "soccer").\n- "text": ALWAYS 100% in English. Never include Portuguese words in the text, even if the topic is in Portuguese.\n- "vocab": each "word" and "sentence" MUST be in English. "pt" is the Portuguese translation of the word only. "sentencePt" is the Portuguese translation of the sentence.\n- "speakPrompt": a question in English for the student to answer.\n\nVOCABULARY RULE: ${LV_VOCAB[S.level]}\n\nReturn ONLY valid JSON, no markdown, no explanation:\n{"text":"[80-100 word spoken-English passage]","vocab":[{"word":"[English word]","pt":"[PT translation of word]","sentence":"[English example sentence]","sentencePt":"[PT translation of sentence]"},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."}],"speakPrompt":"[English question about the topic]"}`;
+    const p=`You are an EFL content creator. Create a structured English lesson about "${topic}" for ${S.level} level.\n\nCRITICAL: The topic may be in Portuguese — translate it to English first.\n- "text": 100% in English\n- "vocab": each "word" and "sentence" in English, "pt" is Portuguese translation\n- "speakPrompt": a question in English\n\nVOCABULARY RULE: ${LV_VOCAB[S.level]}\n\nReturn ONLY valid JSON:\n{"text":"[80-100 word spoken-English passage]","vocab":[{"word":"...","pt":"...","sentence":"...","sentencePt":"..."},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."},{"word":"...","pt":"...","sentence":"...","sentencePt":"..."}],"speakPrompt":"[English question about the topic]"}`;
     const r=await callAI([{role:"user",content:p}]);
     S.lessonData=JSON.parse(cleanJson(r));
   }catch(e){
@@ -1107,7 +853,7 @@ async function submitLessonSpeaking(){
   if(!text||text.length<5) return;
   S.lessonLoading=true; render();
   try{
-    const p=`You are an EFL teacher. Student level: ${S.level}. Topic: "${S.lessonTopic}".\n\nThe student was asked this question: "${S.lessonData.speakPrompt}"\nThe student's response was: "${text}"\n\nYour task is to correct ONLY the student's response, not the question.\nIf the student's response is very short or unclear, give a model answer and explain.\n\nProvide feedback in this EXACT format:\n✅ Corrected: [corrected version of the student's response in English]\n💡 More natural: [how a native speaker would say the student's idea]\n📝 Rule: [one grammar rule in ${LANG(S.level)}, max 1 sentence]\n🗣️ Your turn: [a NEW follow-up question in English about ${S.lessonTopic} — different from the original question]\n\nNEVER correct or rewrite the original question. ONLY correct the student's response.`;
+    const p=`You are an EFL teacher. Student level: ${S.level}. Topic: "${S.lessonTopic}".\n\nThe student was asked: "${S.lessonData.speakPrompt}"\nThe student's response: "${text}"\n\nProvide feedback:\n✅ Corrected: [corrected version in English]\n💡 More natural: [how a native would say it]\n📝 Rule: [one grammar rule in ${LANG(S.level)}, max 1 sentence]\n🗣️ Your turn: [a NEW follow-up question in English]\n\nNEVER correct or rewrite the original question. ONLY correct the student's response.`;
     S.lessonData.speakFeedback=await callAI([{role:"user",content:p}]);
   }catch(e){
     S.lessonData.speakFeedback=null;
@@ -1116,71 +862,59 @@ async function submitLessonSpeaking(){
   S.lessonLoading=false; render();
 }
 
-let lessonRec=null;
-function toggleLessonMic(){
-  const btn=document.getElementById("lessonMicBtn");
-  const status=document.getElementById("lessonMicStatus");
-  const ta=document.getElementById("lessonSpeakArea");
-  if(lessonRec){
-    lessonRec.stop(); lessonRec=null;
-    if(btn) btn.textContent="🎤 Falar";
-    if(status) status.textContent="";
-    return;
+// ══════════════════════════════════════════════════════════════════
+// LISTENING
+// ══════════════════════════════════════════════════════════════════
+function renderListening(){
+  const speeds=[0.7,1,1.2];
+  const topic=getActiveTopic("lisTopic","lisTopicCustom");
+  let html='';
+  html+='<div class="page-title">◎ Listening Trainer</div>';
+  html+='<div class="page-sub">Ouça, repita (shadowing) e compreenda.</div>';
+  html+=timerWidget("listening");
+  html+='<div class="card">';
+  html+='<div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar conteúdo por tema com IA</div>';
+  html+=topicSelector("lisTopic","lisTopicCustom","Ou digite qualquer tema... ex: viagem de férias, entrevista de emprego","lisGenBtn");
+  html+='<div style="display:flex;gap:9px;flex-wrap:wrap">';
+  html+='<button id="lisGenBtn" class="btn btn-primary" onclick="generateListening()" '+(S.genLoading||!topic?'disabled':'')+'>'+(S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(topic||"..."))+'</button>';
+  if(topic) html+='<button class="btn btn-secondary" onclick="S.lisTopic=\'\';S.lisTopicCustom=\'\';S.genListening=null;S.genListeningText=\'\';S.genListeningQs=[];S.lisAnswers={};S.lisFeedback=null;render()">✕ Limpar</button>';
+  html+='</div>';
+  if(S.genListening){
+    html+='<div class="text-box" style="margin-top:14px">'+esc(S.genListening)+'</div>';
+    html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
+    speeds.forEach(sp=>{ html+='<button class="speed-btn'+(S.lisSpeed===sp?" sel":"")+'" onclick="S.lisSpeed='+sp+';render()">'+sp+'x</button>'; });
+    html+='<button class="btn btn-secondary btn-sm" onclick="speak(S.genListeningText,S.lisSpeed)">🔊 Ouvir</button>';
+    html+='<button class="btn btn-secondary btn-sm" onclick="startShadow(S.genListeningText,S.lisSpeed)">↺ Shadow</button>';
+    html+='</div>';
+    if(S.shadowActive){
+      html+='<div style="background:#0d1a0d;border:1px solid #166534;border-radius:12px;padding:16px;text-align:center;margin-bottom:8px">';
+      html+='<div style="font-size:28px;margin-bottom:8px">'+(S.shadowCountdown>0?S.shadowCountdown:"🎤")+'</div>';
+      html+='<div style="font-size:14px;color:#6ee7b7;font-weight:600">'+(S.shadowCountdown>0?"Prepare-se para repetir...":"Agora repita em voz alta!")+'</div>';
+      if(S.shadowCountdown===0) html+='<div class="text-box" style="margin-top:12px;text-align:left;border-color:#166534">'+esc(S.genListening)+'</div>';
+      html+='</div>';
+    }
+    if(S.genListeningQs.length>0){
+      html+='<p style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:9px">Perguntas de compreensão:</p>';
+      html+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">';
+      S.genListeningQs.forEach((q,i)=>{
+        html+='<div><p style="font-size:13px;color:#c4b5fd;margin-bottom:5px">'+(i+1)+'. '+esc(q)+'</p>';
+        html+='<input class="inp" placeholder="Your answer..." value="'+esc(S.lisAnswers[i]||'')+'" oninput="S.lisAnswers['+i+']=this.value"/></div>';
+      });
+      html+='</div>';
+      if(S.lisFeedback){
+        html+='<div class="success-box"><div style="color:#6ee7b7;font-weight:700;margin-bottom:6px;font-size:13px">✓ Feedback:</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:#d1fae5">'+esc(S.lisFeedback)+'</div></div>';
+      } else {
+        html+='<button class="btn btn-primary btn-sm" onclick="checkListeningAnswers()" '+(S.lisAnsLoading?'disabled':'')+'>'+(S.lisAnsLoading?"⏳...":"Verificar respostas")+'</button>';
+      }
+    }
+    if(S.lisFeedback){
+      html+='<div style="margin-top:16px;padding-top:14px;border-top:1px solid #1a1828;text-align:center"><button class="btn btn-success" onclick="completeTask(\'listening\');showTab(\'dashboard\')">✓ Concluir Listening</button></div>';
+    }
   }
-  lessonRec=initRec(
-    txt=>{ if(ta){ ta.value=(ta.value?ta.value+" ":"")+txt; S.lessonSpeakInput=ta.value; } },
-    ()=>{ lessonRec=null; if(btn) btn.textContent="🎤 Falar"; if(status) status.textContent=""; }
-  );
-  if(!lessonRec){ showToast("Microfone não disponível neste navegador.","#f87171"); return; }
-  lessonRec.start();
-  if(btn) btn.textContent="⏹ Parar";
-  if(status) status.textContent="🔴 Ouvindo... fale em inglês";
+  html+='</div>';
+  return html;
 }
 
-function renderListening(){
-  const items=LISTENING[S.level]||[];
-  const speeds=[0.7,1,1.2];
-  return `
-<div class="page-title">◎ Listening Trainer</div>
-<div class="page-sub">Ouça, repita (shadowing) e compreenda. Foque no ritmo e sons do inglês.</div>
-${timerWidget("listening")}
-<div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar conteúdo por tema com IA</div>
-  ${topicSelector("lisTopic","lisTopicCustom","Ou digite qualquer tema... ex: viagem de férias, entrevista de emprego","lisGenBtn")}
-  <div style="display:flex;gap:9px;flex-wrap:wrap">
-    <button id="lisGenBtn" class="btn btn-primary" onclick="generateListening()" ${S.genLoading||!getActiveTopic("lisTopic","lisTopicCustom")?"disabled":""}>
-      ${S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(getActiveTopic("lisTopic","lisTopicCustom")||"...")}
-    </button>
-    ${getActiveTopic("lisTopic","lisTopicCustom")?`<button class="btn btn-secondary" onclick="S.lisTopic='';S.lisTopicCustom='';S.genListening=null;S.genListeningText='';S.genListeningQs=[];S.lisAnswers={};S.lisFeedback=null;render()">✕ Limpar</button>`:""}
-  </div>
-  ${S.genListening?`
-  <div class="text-box" style="margin-top:14px">${esc(S.genListening)}</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-    ${speeds.map(sp=>`<button class="speed-btn${S.lisSpeed===sp?" sel":""}" onclick="S.lisSpeed=${sp};render()">${sp}x</button>`).join("")}
-    <button class="btn btn-secondary btn-sm" onclick="S.shadowActive=false;S.shadowCountdown=0;speak(S.genListeningText,S.lisSpeed);render()">🔊 Ouvir</button>
-    <button class="btn btn-secondary btn-sm" onclick="startShadow(S.genListeningText,S.lisSpeed)" title="Ouça e repita em voz alta assim que o áudio terminar">↺ Shadow</button>
-  </div>
-  ${S.shadowActive?`
-  <div style="background:#0d1a0d;border:1px solid #166534;border-radius:12px;padding:16px;text-align:center;margin-bottom:8px">
-    <div style="font-size:28px;margin-bottom:8px">${S.shadowCountdown>0?S.shadowCountdown:"🎤"}</div>
-    <div style="font-size:14px;color:#6ee7b7;font-weight:600">${S.shadowCountdown>0?"Prepare-se para repetir...":"Agora repita em voz alta!"}</div>
-    <div style="font-size:12px;color:#888;margin-top:4px">${S.shadowCountdown>0?"O texto aparecerá em "+S.shadowCountdown+"s":"Fale o texto que acabou de ouvir"}</div>
-    ${S.shadowCountdown===0?`<div class="text-box" style="margin-top:12px;text-align:left;border-color:#166534">${esc(S.genListening)}</div>`:""}
-  </div>`:""}
-  ${S.genListeningQs.length>0?`
-  <p style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:9px">Perguntas de compreensão:</p>
-  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-    ${S.genListeningQs.map((q,i)=>`<div><p style="font-size:13px;color:#c4b5fd;margin-bottom:5px">${i+1}. ${q}</p><input class="inp" placeholder="Your answer..." value="${esc(S.lisAnswers[i]||"")}" oninput="S.lisAnswers[${i}]=this.value"/></div>`).join("")}
-  </div>
-  ${S.lisFeedback?`<div class="success-box"><div style="color:#6ee7b7;font-weight:700;margin-bottom:6px;font-size:13px">✓ Feedback:</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:#d1fae5">${esc(S.lisFeedback)}</div></div>`:`<button class="btn btn-primary btn-sm" onclick="checkListeningAnswers()" ${S.lisAnsLoading?"disabled":""}>${S.lisAnsLoading?"⏳...":"Verificar respostas"}</button>`}
-  `:""}
-  `:""}
-  ${S.lisFeedback?`
-  <div style="margin-top:16px;padding-top:14px;border-top:1px solid #1a1828;text-align:center">
-    <button class="btn btn-success" onclick="completeTask('listening');showTab('dashboard')">✓ Concluir Listening</button>
-  </div>`:""}
-</div>`
-}
 async function generateListening(){
   const topic=translateTopic(getActiveTopic("lisTopic","lisTopicCustom"));
   if(!topic||S.genLoading) return;
@@ -1188,32 +922,25 @@ async function generateListening(){
   try{
     const reply=await callAI([{role:"user",content:P_LISTENING_GENERATE(topic,S.level)}]);
     S.genListening=reply.trim(); S.genListeningText=reply.trim();
-    try{
-      S.genListeningQs=JSON.parse(cleanJson(await callAI([{role:"user",content:P_READING_QUESTIONS(S.genListeningText,S.level)}])));
-    }catch(e){ S.genListeningQs=[]; }
+    try{ S.genListeningQs=JSON.parse(cleanJson(await callAI([{role:"user",content:P_READING_QUESTIONS(S.genListeningText,S.level)}]))); }catch(e){ S.genListeningQs=[]; }
   }catch(e){
     S.genListening=null; S.genListeningText="";
     showToast(e.message||"Erro ao gerar conteúdo. Tente novamente.","#f87171");
-  }finally{
-    S.genLoading=false; render();
-  }
+  }finally{ S.genLoading=false; render(); }
 }
 
 async function checkListeningAnswers(){
   if(S.lisAnsLoading||!S.genListeningText) return;
   S.lisAnsLoading=true; render();
-  try{
-    S.lisFeedback=await callAI([{role:"user",content:P_READING_FEEDBACK(S.genListeningText,S.genListeningQs,S.lisAnswers,S.genListeningQs,S.level)}]);
-  }catch(e){
-    S.lisFeedback=null;
-    showToast(e.message||"Erro ao verificar respostas. Tente novamente.","#f87171");
-  }finally{
-    S.lisAnsLoading=false; render();
-  }
+  try{ S.lisFeedback=await callAI([{role:"user",content:P_READING_FEEDBACK(S.genListeningText,S.genListeningQs,S.lisAnswers,S.genListeningQs,S.level)}]); }
+  catch(e){ S.lisFeedback=null; showToast(e.message||"Erro ao verificar respostas.","#f87171"); }
+  finally{ S.lisAnsLoading=false; render(); }
 }
 
+// ══════════════════════════════════════════════════════════════════
+// SPEAKING
+// ══════════════════════════════════════════════════════════════════
 function currentSpeakPrompt(){
-  // Usa o prompt atual (último da fila) ou prompts padrão
   if(S.speakGenPrompts.length>0) return S.speakGenPrompts[S.speakGenPrompts.length-1];
   const arr=SPEAKING_PROMPTS[S.level]||SPEAKING_PROMPTS.Beginner;
   return arr[S.speakRound%arr.length];
@@ -1228,11 +955,10 @@ function renderSpeaking(){
 ${timerWidget("speaking")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar prompts por tema</div>
-  ${topicSelector("speakTopic","speakTopicCustom","Ou digite seu tema... ex: minha rotina de trabalho, férias nos EUA","speakGenBtn")}
+  ${topicSelector("speakTopic","speakTopicCustom","Ou digite seu tema...","speakGenBtn")}
   <button id="speakGenBtn" class="btn btn-primary btn-sm" onclick="generateSpeakPrompts()" ${S.speakGenLoading||!getActiveTopic("speakTopic","speakTopicCustom")?"disabled":""}>
-    ${S.speakGenLoading?"⏳ Gerando...":"✦ Começar prompts sobre "+(getActiveTopic("speakTopic","speakTopicCustom")||"...")}
+    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompt sobre "+(getActiveTopic("speakTopic","speakTopicCustom")||"...")}
   </button>
-  ${S.speakGenPrompts.length>0?`<div style="margin-top:8px;font-size:12px;color:#6ee7b7">✓ Prompt gerado! Clique "→ Próximo prompt" para gerar mais.</div>`:""}
 </div>
 <div class="card" style="border-color:#3d1d6b">
   <div style="background:#1e1a2e;display:inline-block;padding:3px 10px;border-radius:6px;font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:12px;letter-spacing:.06em">PROMPT ${S.speakRound+1}</div>
@@ -1264,25 +990,7 @@ ${S.speakHistory.length>0?`
     ${h.corrected?`<div style="font-size:11px;color:#6b7280;margin-bottom:3px">✅ Versão corrigida:</div><div style="font-size:13px;color:#6ee7b7">${esc(h.corrected)}</div>`:
     `<div style="font-size:13px;color:#d1d5db">${esc(h.text)}</div>`}
   </div>`).join("")}
-</div>`:""}
-${(S.savedSpeaking||[]).length>0?`
-<div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:12px">⭐ Respostas salvas (${S.savedSpeaking.length})</div>
-  ${S.savedSpeaking.slice(-3).reverse().map((h,i)=>`
-  <div style="padding:10px 13px;background:#0c0c18;border-radius:10px;margin-bottom:8px;border:1px solid #2d2a40">
-    <div style="font-size:11px;color:#f59e0b;margin-bottom:4px">${h.date} — "${h.prompt}"</div>
-    <div style="font-size:13px;color:#d1d5db">${esc(h.text)}</div>
-  </div>`).join("")}
-</div>`:""}
-<div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:3px">Chunks úteis</div>
-  <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Use estas frases na sua prática.</div>
-  ${(VOCAB[S.level]||VOCAB.Beginner).filter(v=>v.chunk).slice(0,4).map(v=>`
-  <div class="chunk-item">
-    <div style="flex:1"><span style="color:#a78bfa;font-weight:600;font-size:13px">${v.word}</span><span style="color:#6b7280;font-size:11px;margin-left:7px">— ${v.pt}</span></div>
-    <button class="btn btn-secondary btn-sm" onclick="sendChunkToAI('${v.word.replace(/'/g,"\\'")}')">Praticar ✦</button>
-  </div>`).join("")}
-</div>`;
+</div>`:""}`;
 }
 
 async function generateSpeakPrompts(){
@@ -1292,9 +1000,9 @@ async function generateSpeakPrompts(){
   try{
     const p=`Generate 1 speaking prompt about "${topic}" for ${S.level} English level. Return ONLY a JSON array with 1 string. Example: ["Your prompt here?"]`;
     const result=JSON.parse(cleanJson(await callAI([{role:"user",content:p}])));
-    S.speakGenPrompts=[result[0]];
-    S.speakRound=0;
-  }catch(e){ showToast(e.message||"Erro ao gerar prompt. Tente novamente.","#f87171"); }finally{ S.speakGenLoading=false; render(); }
+    S.speakGenPrompts=[result[0]]; S.speakRound=0;
+  }catch(e){ showToast(e.message||"Erro ao gerar prompt.","#f87171"); }
+  finally{ S.speakGenLoading=false; render(); }
 }
 
 async function generateNextSpeakPrompt(){
@@ -1303,12 +1011,12 @@ async function generateNextSpeakPrompt(){
   S.speakGenLoading=true; render();
   try{
     const previous=S.speakGenPrompts.slice(-5).map((p,i)=>`${i+1}. ${p}`).join(" | ");
-    const p=`Generate 1 NEW speaking prompt about "${topic}" for ${S.level} English level. Do NOT repeat these previous prompts: ${previous}. Return ONLY a JSON array with 1 string. Example: ["Your new prompt here?"]`;
+    const p=`Generate 1 NEW speaking prompt about "${topic}" for ${S.level} English level. Do NOT repeat: ${previous}. Return ONLY a JSON array with 1 string.`;
     const result=JSON.parse(cleanJson(await callAI([{role:"user",content:p}])));
     S.speakGenPrompts.push(result[0]);
-  }catch(e){ showToast(e.message||"Erro ao gerar próximo prompt.","#f87171"); }finally{ S.speakGenLoading=false; render(); }
+  }catch(e){ showToast(e.message||"Erro ao gerar próximo prompt.","#f87171"); }
+  finally{ S.speakGenLoading=false; render(); }
 }
-
 
 async function submitSpeaking(){
   const ta=document.getElementById("speakTextarea");
@@ -1317,10 +1025,9 @@ async function submitSpeaking(){
   S.speakLoading=true; S.speakFeedback=null; render();
   try{
     const lang=["Beginner","Basic"].includes(S.level)?"Portuguese":"English";
-    const prompt=`You are an expert EFL speaking coach. The student is at ${S.level} level.\n\nSPEAKING PROMPT GIVEN: "${currentSpeakPrompt()}"\nSTUDENT'S ANSWER: "${text}"\n\nRespond with this EXACT structure (use these exact labels):\n\n✅ CORRECTED:\n[Write the corrected version — fix ALL grammar, vocabulary, word order errors]\n\n💡 MORE NATURAL:\n[Rewrite as a fluent native speaker would say it — same ideas, better flow]\n\n🔊 PRONUNCIATION TIP:\n[One specific, actionable tip for a ${S.level} learner — in ${lang}]\n\n📝 WHAT YOU LEARNED:\n[Explain the 1-2 most important mistakes in ${lang} — be specific, not generic. If the answer is correct, say so and explain one thing that could make it even better]\n\n🗣️ NOW YOU:\n[One follow-up question pushing them to produce one more sentence on the same topic]\n\nKeep total response under 200 words. Be direct and precise. Do NOT add closing praise or motivational sentences.`;
+    const prompt=`You are an expert EFL speaking coach. The student is at ${S.level} level.\n\nSPEAKING PROMPT GIVEN: "${currentSpeakPrompt()}"\nSTUDENT'S ANSWER: "${text}"\n\nRespond with this EXACT structure:\n\n✅ CORRECTED:\n[Write the corrected version]\n\n💡 MORE NATURAL:\n[Rewrite as a fluent native speaker]\n\n🔊 PRONUNCIATION TIP:\n[One specific tip in ${lang}]\n\n📝 WHAT YOU LEARNED:\n[Explain the 1-2 most important mistakes in ${lang}]\n\n🗣️ NOW YOU:\n[One follow-up question on the same topic]\n\nKeep total response under 200 words. Be direct and precise.`;
     const reply=await callAI([{role:"user",content:prompt}]);
     S.speakFeedback=reply;
-    // [FIX P28] Extract corrected version to show in history instead of original (with errors)
     const parsedFb=parseSpeakFeedback(reply);
     const correctedText=parsedFb?.corrected||text;
     S.speakHistory.push({prompt:currentSpeakPrompt(),text,corrected:correctedText,feedback:reply});
@@ -1328,96 +1035,33 @@ async function submitSpeaking(){
   }catch(e){
     S.speakFeedback=null;
     showToast(e.message||"Erro ao conectar. Tente novamente.","#f87171");
-  }finally{
-    S.speakLoading=false; render();
-  }
+  }finally{ S.speakLoading=false; render(); }
 }
 
-/* ═══ Speaking Feedback — MELHORADO (Pareto) ═══ */
 function parseSpeakFeedback(raw){
   if(!raw) return null;
   const sections={corrected:"",natural:"",pronunciation:"",learned:"",followup:""};
   const patterns=[
-    {key:"corrected",   re:/✅\s*CORRECTED[:\s]*([\s\S]*?)(?=💡|🔊|📝|🗣️|$)/i},
-    {key:"natural",     re:/💡\s*MORE NATURAL[:\s]*([\s\S]*?)(?=🔊|📝|🗣️|$)/i},
+    {key:"corrected",re:/✅\s*CORRECTED[:\s]*([\s\S]*?)(?=💡|🔊|📝|🗣️|$)/i},
+    {key:"natural",re:/💡\s*MORE NATURAL[:\s]*([\s\S]*?)(?=🔊|📝|🗣️|$)/i},
     {key:"pronunciation",re:/🔊\s*PRONUNCIATION TIP[:\s]*([\s\S]*?)(?=📝|🗣️|$)/i},
-    {key:"learned",     re:/📝\s*WHAT(?:\s+YOU)?\s*(?:LEARNED|NOTICED)[:\s]*([\s\S]*?)(?=🗣️|$)/i},
-    {key:"followup",    re:/🗣️\s*NOW YOU[:\s]*([\s\S]*?)$/i},
+    {key:"learned",re:/📝\s*WHAT(?:\s+YOU)?\s*(?:LEARNED|NOTICED)[:\s]*([\s\S]*?)(?=🗣️|$)/i},
+    {key:"followup",re:/🗣️\s*NOW YOU[:\s]*([\s\S]*?)$/i},
   ];
-  for(const p of patterns){
-    const m=raw.match(p.re);
-    if(m) sections[p.key]=m[1].trim();
-  }
+  for(const p of patterns){ const m=raw.match(p.re); if(m) sections[p.key]=m[1].trim(); }
   const hasAny=Object.values(sections).some(v=>v.length>0);
   return hasAny?sections:null;
 }
 
 function renderSpeakFeedback(raw){
   const p=parseSpeakFeedback(raw);
-
-  if(!p){
-    return `<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:#d1fae5;background:#07070f;border-radius:10px;padding:14px">${esc(raw)}</div>`;
-  }
-
+  if(!p) return `<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:#d1fae5;background:#07070f;border-radius:10px;padding:14px">${esc(raw)}</div>`;
   const uid="fb"+Math.random().toString(36).slice(2,7);
-
-  // [FIX P25] Block 1: corrected version — onclick calls speak() directly with corrected text
-  const block1=p.corrected?`
-  <div class="fb-card" style="background:#031710;border:1px solid #065f46">
-    <div class="fb-main">
-      <div class="fb-label" style="color:#6ee7b7">
-        <span style="font-size:14px">✅</span> Versão corrigida
-      </div>
-      <div class="fb-text" style="color:#d1fae5">${esc(p.corrected)}</div>
-      <button class="fb-speak-btn" data-txt="${esc(p.corrected.substring(0,200))}" onclick="speak(this.getAttribute('data-txt'))">
-        🔊 Ouvir versão corrigida
-      </button>
-    </div>
-  </div>`:"";
-
-  const block2=p.natural?`
-  <div class="fb-card" style="background:#0f0a1e;border:1px solid #3d1d6b">
-    <div class="fb-main">
-      <div class="fb-label" style="color:#a78bfa">
-        <span style="font-size:14px">💡</span> Como um nativo diria
-      </div>
-      <div class="fb-text" style="color:#c4b5fd">${esc(p.natural)}</div>
-    </div>
-  </div>`:"";
-
-  // [FIX P27] Details toggle — using proper onclick with element reference
+  const block1=p.corrected?`<div class="fb-card" style="background:#031710;border:1px solid #065f46"><div class="fb-main"><div class="fb-label" style="color:#6ee7b7"><span style="font-size:14px">✅</span> Versão corrigida</div><div class="fb-text" style="color:#d1fae5">${esc(p.corrected)}</div><button class="fb-speak-btn" data-txt="${esc(p.corrected.substring(0,200))}" onclick="speak(this.getAttribute('data-txt'))">🔊 Ouvir versão corrigida</button></div></div>`:"";
+  const block2=p.natural?`<div class="fb-card" style="background:#0f0a1e;border:1px solid #3d1d6b"><div class="fb-main"><div class="fb-label" style="color:#a78bfa"><span style="font-size:14px">💡</span> Como um nativo diria</div><div class="fb-text" style="color:#c4b5fd">${esc(p.natural)}</div></div></div>`:"";
   const hasDetails=p.pronunciation||p.learned;
-  const details=hasDetails?`
-  <div class="fb-card" style="background:#0c0c18;border:1px solid #1a1828">
-    <button class="fb-toggle" id="toggle_${uid}" onclick="
-      const d=document.getElementById('det_${uid}');
-      const btn=document.getElementById('toggle_${uid}');
-      if(d.style.display==='none'||!d.style.display){
-        d.style.display='block';
-        btn.textContent='▲ Ocultar detalhes';
-      } else {
-        d.style.display='none';
-        btn.textContent='▼ Ver análise completa (pronúncia + o que aprender)';
-      }
-    ">▼ Ver análise completa (pronúncia + o que aprender)</button>
-    <div id="det_${uid}" style="display:none;background:#07070f;border-top:1px solid #1a1828;padding:13px 15px">
-      ${p.pronunciation?`<div class="fb-detail-row">
-        <div class="fb-detail-label" style="color:#60a5fa">🔊 Dica de pronúncia</div>
-        <div class="fb-detail-text">${esc(p.pronunciation)}</div>
-      </div>`:""}
-      ${p.learned?`<div class="fb-detail-row" style="margin-bottom:0">
-        <div class="fb-detail-label" style="color:#fcd34d">📝 O que notar</div>
-        <div class="fb-detail-text">${esc(p.learned)}</div>
-      </div>`:""}
-    </div>
-  </div>`:"";
-
-  const followup=p.followup?`
-  <div class="fb-followup">
-    <div class="fb-followup-label">🗣️ Agora você</div>
-    <div class="fb-followup-text">${esc(p.followup)}</div>
-  </div>`:"";
-
+  const details=hasDetails?`<div class="fb-card" style="background:#0c0c18;border:1px solid #1a1828"><button class="fb-toggle" id="toggle_${uid}" onclick="const d=document.getElementById('det_${uid}');const btn=document.getElementById('toggle_${uid}');if(d.style.display==='none'||!d.style.display){d.style.display='block';btn.textContent='▲ Ocultar detalhes';}else{d.style.display='none';btn.textContent='▼ Ver análise completa';}">▼ Ver análise completa (pronúncia + o que aprender)</button><div id="det_${uid}" style="display:none;background:#07070f;border-top:1px solid #1a1828;padding:13px 15px">${p.pronunciation?`<div class="fb-detail-row"><div class="fb-detail-label" style="color:#60a5fa">🔊 Dica de pronúncia</div><div class="fb-detail-text">${esc(p.pronunciation)}</div></div>`:""} ${p.learned?`<div class="fb-detail-row" style="margin-bottom:0"><div class="fb-detail-label" style="color:#fcd34d">📝 O que notar</div><div class="fb-detail-text">${esc(p.learned)}</div></div>`:""}</div></div>`:"";
+  const followup=p.followup?`<div class="fb-followup"><div class="fb-followup-label">🗣️ Agora você</div><div class="fb-followup-text">${esc(p.followup)}</div></div>`:"";
   return block1+block2+details+followup;
 }
 
@@ -1433,13 +1077,8 @@ function saveSpeak(){
 function nextSpeakRound(){
   S.speakRound++; S.speakInput=""; S.speakFeedback=null;
   const ta=document.getElementById("speakTextarea"); if(ta) ta.value="";
-  // Se há tema selecionado, gera próximo prompt automaticamente
   const topic=getActiveTopic("speakTopic","speakTopicCustom");
-  if(topic && S.speakGenPrompts.length>0){
-    generateNextSpeakPrompt();
-  } else {
-    render();
-  }
+  if(topic && S.speakGenPrompts.length>0){ generateNextSpeakPrompt(); } else { render(); }
 }
 
 function sendChunkToAI(chunk){
@@ -1447,6 +1086,9 @@ function sendChunkToAI(chunk){
   S.tab="ai"; render(); setTimeout(()=>sendAIMessage(),100);
 }
 
+// ══════════════════════════════════════════════════════════════════
+// READING
+// ══════════════════════════════════════════════════════════════════
 function makeClickableText(text){
   if(!text) return "";
   return text.replace(/([a-zA-Z''-]+)/g, w=>`<span onclick="clickWord('${w.replace(/'/g,"\\'")}',event)" style="cursor:pointer;border-radius:3px;transition:background .15s" onmouseover="this.style.background='#1e1a2e'" onmouseout="this.style.background=''">${esc(w)}</span>`);
@@ -1459,16 +1101,13 @@ async function clickWord(word,event){
   if(S.clickedWord===clean&&S.clickedWordTrans){ S.clickedWord=null; S.clickedWordTrans=null; render(); return; }
   S.clickedWord=clean; S.clickedWordTrans="traduzindo..."; render();
   try{
-    const r=await callAI([{role:"user",content:`Translate the English word "${clean}" to Brazilian Portuguese. Give ONLY the translation (1-4 words max). No explanation, no punctuation.`}]);
+    const r=await callAI([{role:"user",content:`Translate the English word "${clean}" to Brazilian Portuguese. Give ONLY the translation (1-4 words max). No explanation.`}]);
     S.clickedWordTrans=r.trim();
   }catch(e){ S.clickedWordTrans=null; }
   render();
 }
 
 function renderReading(){
-  const items=READING[S.level]||[];
-  const idx=Math.min(S.readIdx,Math.max(0,items.length-1));
-  const item=items[idx]||null;
   const topic=getActiveTopic("readTopic","readTopicCustom");
   return `
 <div class="page-title">≡ Reading Trainer</div>
@@ -1476,7 +1115,7 @@ function renderReading(){
 ${timerWidget("reading")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar texto por tema com IA</div>
-  ${topicSelector("readTopic","readTopicCustom","Ou digite qualquer tema... ex: inteligência artificial, gastronomia","readGenBtn")}
+  ${topicSelector("readTopic","readTopicCustom","Ou digite qualquer tema...","readGenBtn")}
   <button id="readGenBtn" class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(topic||"...")}</button>
   ${topic?`<button class="btn btn-secondary btn-sm" onclick="S.readTopic='';S.readTopicCustom='';S.genReading=null;S.genReadingQs=[];S.genReadingAnswers={};S.genReadingFeedback=null;render()" style="margin-left:8px">✕ Limpar</button>`:""}
   ${S.genReading?`
@@ -1526,173 +1165,64 @@ async function generateReading(){
   S.genReadingLoading=true; S.genReading=null; S.genReadingQs=[]; S.genReadingAnswers={}; S.genReadingFeedback=null; render();
   try{
     S.genReading=(await callAI([{role:"user",content:P_READING(topic,S.level)}])).trim();
-    try{
-      S.genReadingQs=JSON.parse(cleanJson(await callAI([{role:"user",content:P_READING_QUESTIONS(S.genReading,S.level)}])));
-    }catch(e){ S.genReadingQs=[]; }
+    try{ S.genReadingQs=JSON.parse(cleanJson(await callAI([{role:"user",content:P_READING_QUESTIONS(S.genReading,S.level)}]))); }catch(e){ S.genReadingQs=[]; }
     completeTask("reading");
   }catch(e){
     S.genReading=null;
-    showToast(e.message||"Erro ao gerar texto. Tente novamente.","#f87171");
-  }finally{
-    S.genReadingLoading=false; render();
-  }
+    showToast(e.message||"Erro ao gerar texto.","#f87171");
+  }finally{ S.genReadingLoading=false; render(); }
 }
 
 async function submitGenReading(){
   if(S.genReadingFeedbackLoading||!S.genReading) return;
   S.genReadingFeedbackLoading=true; render();
-  try{
-    S.genReadingFeedback=await callAI([{role:"user",content:P_READING_FEEDBACK(S.genReading,S.genReadingQs,S.genReadingAnswers,S.genReadingQs.map((_,i)=>S.genReadingAnswers[i]||""),S.level)}]);
-  }catch(e){
-    S.genReadingFeedback=null;
-    showToast(e.message||"Erro ao processar. Tente novamente.","#f87171");
-  }finally{
-    S.genReadingFeedbackLoading=false; render();
-  }
+  try{ S.genReadingFeedback=await callAI([{role:"user",content:P_READING_FEEDBACK(S.genReading,S.genReadingQs,S.genReadingAnswers,S.genReadingQs.map((_,i)=>S.genReadingAnswers[i]||""),S.level)}]); }
+  catch(e){ S.genReadingFeedback=null; showToast(e.message||"Erro ao processar.","#f87171"); }
+  finally{ S.genReadingFeedbackLoading=false; render(); }
 }
 
-async function submitReading(){
-  const items=READING[S.level]||[];
-  const item=items[Math.min(S.readIdx,items.length-1)];
-  if(!item||!Object.keys(S.readAnswers).length){ alert("Responda pelo menos uma pergunta!"); return; }
-  S.readLoading=true; render();
-  try{
-    S.readFeedback=await callAI([{role:"user",content:P_READING_FEEDBACK(item.text,item.questions,S.readAnswers,item.answers,S.level)}]);
-    completeTask("reading");
-  }catch(e){
-    S.readFeedback=null;
-    showToast(e.message||"Erro ao processar feedback. Tente novamente.","#f87171");
-  }
-  S.readLoading=false; render();
+// ══════════════════════════════════════════════════════════════════
+// VOCABULARY — novo sistema Anki-style
+// ══════════════════════════════════════════════════════════════════
+
+function getDueCards(){
+  const now=Date.now();
+  return S.deck.filter(c=>!c.srs||c.srs.nextReview<=now||c.srs.status==="new");
 }
 
-function getAllVocab(){ return [...(VOCAB[S.level]||[]),...S.vocabGenWords,...(S.userVocab||[])]; }
-
-function getFilteredVocab(){
-  const all=getAllVocab();
-  if(S.vocabFilter==="learned") return all.filter(v=>S.vocabSRS[v.id]?.status==="learned");
-  if(S.vocabFilter==="review") return all.filter(v=>S.vocabSRS[v.id]?.status==="review");
-  if(S.vocabFilter==="mine") return S.userVocab||[];
-  return all;
+function addCardsToDeck(cards,source,keyword){
+  if(!S.deck) S.deck=[];
+  let count=0;
+  cards.forEach(c=>{
+    const id=9000+Date.now()+Math.floor(Math.random()*1000)+count;
+    S.deck.push({
+      id,front:c.front,back:c.back,highlight:c.highlight||keyword||"",
+      source,keyword:keyword||"",level:S.level,addedAt:Date.now(),
+      srs:{ease:2.5,interval:1,reps:0,status:"new",nextReview:Date.now(),lastReview:null}
+    });
+    count++;
+  });
+  saveState();
+  return count;
 }
 
-function renderVocab(){
-  const list=getAllVocab();
-  const card=list[S.vocabIdx%list.length];
-  if(!card) return `<div class="page-title">⊟ Vocabulary</div><p style="color:#555;margin-top:20px">Nenhuma palavra disponível.</p>`;
-  const learned=Object.values(S.vocabSRS).filter(v=>v.status==="learned").length;
-  const filteredList=getFilteredVocab();
-  const today=new Date().toDateString();
-  const todayWords=Object.entries(S.vocabSRS).filter(([,v])=>v.lastReview&&new Date(v.lastReview).toDateString()===today).length;
-  const weekWords=Object.entries(S.vocabSRS).filter(([,v])=>v.lastReview&&(Date.now()-v.lastReview)<7*864e5).length;
-  const monthWords=Object.entries(S.vocabSRS).filter(([,v])=>v.lastReview&&(Date.now()-v.lastReview)<30*864e5).length;
-  return `
-<div class="page-title">⊟ Vocabulary</div>
-<div class="page-sub">Aprendizado com Repetição Espaçada — avalie o quanto lembrou para calcular a próxima revisão.</div>
-${timerWidget("vocabulary")}
-<div class="card" style="margin-bottom:14px">
-  <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar vocabulário por tema</div>
-  ${topicSelector("vocabTopic","vocabTopicCustom","Ou digite qualquer tema... ex: reuniões de trabalho, culinária","vocabGenBtn")}
-  <button id="vocabGenBtn" class="btn btn-primary btn-sm" onclick="generateVocab()" ${S.vocabGenLoading||!getActiveTopic("vocabTopic","vocabTopicCustom")?"disabled":""}>${S.vocabGenLoading?"⏳...":"✦ Gerar sobre "+(getActiveTopic("vocabTopic","vocabTopicCustom")||"...")}</button>
-  ${(S.vocabGenWords||[]).length>0?`<span style="font-size:12px;color:#6ee7b7;margin-left:10px">+${S.vocabGenWords.length} palavras adicionadas!</span>`:""}
-</div>
-<div class="card" style="margin-bottom:14px">
-  <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Cadastrar palavra personalizada</div>
-  <div style="display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap">
-    <div style="flex:1;min-width:160px">
-      <label style="font-size:12px;color:#888;display:block;margin-bottom:5px">Palavra ou frase em inglês</label>
-      <input class="inp" id="vocabCustomInp" placeholder="ex: pull off, break even..." value="${esc(S.vocabCustomWord)}" oninput="S.vocabCustomWord=this.value;const _btn=document.getElementById('vocabCustomBtn');if(_btn)_btn.disabled=!this.value.trim();"/>
-    </div>
-    <button id="vocabCustomBtn" class="btn btn-primary btn-sm" onclick="generateCustomVocab()" ${S.vocabCustomLoading||!S.vocabCustomWord.trim()?"disabled":""}>${S.vocabCustomLoading?"⏳...":"✦ Gerar tradução e exemplo"}</button>
-  </div>
-  ${S.vocabCustomResult?`
-  <div style="margin-top:12px;background:#0c0c18;border-radius:10px;padding:14px;border:1px solid #2d2a40">
-    <div style="font-size:15px;font-weight:700;color:#a78bfa;margin-bottom:4px">${S.vocabCustomResult.word}</div>
-    <div style="font-size:13px;color:#f59e0b;margin-bottom:6px">🇧🇷 ${S.vocabCustomResult.pt}</div>
-    <div style="font-size:13px;color:#c4b5fd;font-style:italic;margin-bottom:4px">"${S.vocabCustomResult.sentence}"</div>
-    ${S.vocabCustomResult.sentencePt?`<div style="font-size:12px;color:#6b7280;margin-bottom:12px">"${S.vocabCustomResult.sentencePt}"</div>`:'<div style="margin-bottom:12px"></div>'}
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-success btn-sm" onclick="addCustomVocab()">✓ Adicionar ao meu banco</button>
-      <button class="btn btn-secondary btn-sm" onclick="speak('${(S.vocabCustomResult.sentence||S.vocabCustomResult.word||"").replace(/'/g,"\\'")}')">🔊 Ouvir</button>
-      <button class="btn btn-secondary btn-sm" onclick="S.vocabCustomResult=null;S.vocabCustomWord='';render()">✕</button>
-    </div>
-  </div>`:""}
-</div>
-<div class="flashcard" onclick="flipCard()">
-  ${!S.vocabFlipped?`
-    <div style="font-size:10px;color:#6b7280;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">${card.chunk?"Chunk / Frase":"Palavra"} — clique para revelar</div>
-    <div style="font-size:26px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#a78bfa">${card.word}</div>
-    ${card.cat?`<div style="font-size:11px;color:#444;margin-top:8px">${card.cat}</div>`:""}
-  `:`
-    <div style="font-size:13px;color:#f59e0b;font-weight:700;margin-bottom:6px">🇧🇷 ${card.pt}</div>
-    <div style="font-size:14px;color:#c4b5fd;font-style:italic;margin-bottom:4px">"${card.sentence}"</div>
-    ${card.sentencePt?`<div style="font-size:12px;color:#6b7280;font-style:italic;margin-bottom:8px">"${card.sentencePt}"</div>`:""}
-    ${card.tip?`<div style="font-size:11px;color:#7c3aed;background:#1a1630;padding:4px 10px;border-radius:6px;margin-bottom:6px">💡 ${card.tip}</div>`:""}
-    <div style="font-size:11px;color:#555">Clique para voltar</div>
-  `}
-</div>
-<div style="font-size:12px;color:#555;text-align:center;margin-bottom:10px">${(S.vocabIdx%list.length)+1} / ${list.length} — ${learned} aprendidas</div>
-
-<div style="font-size:12px;color:#6b7280;text-align:center;margin-bottom:10px">Quanto você se lembrou?</div>
-<div style="display:flex;gap:8px;margin-bottom:14px">
-  <button class="btn btn-hard" onclick="srsAnswer(${card.id},'hard')">😰 Difícil<br><span style="font-size:10px">≈${(()=>{const p=S.vocabSRS[card.id]||{interval:1};return p.interval<=1?"amanhã":p.interval+" dias";})()} </span></button>
-  <button class="btn btn-medium" onclick="srsAnswer(${card.id},'medium')">🤔 Médio<br><span style="font-size:10px">≈${(()=>{const p=S.vocabSRS[card.id]||{interval:1,reps:0};return p.reps===0?"1 dia":p.reps===1?"6 dias":Math.round((p.interval||1)*(p.ease||2.5))+" dias";})()} </span></button>
-  <button class="btn btn-easy" onclick="srsAnswer(${card.id},'easy')">😊 Fácil<br><span style="font-size:10px">≈${(()=>{const p=S.vocabSRS[card.id]||{interval:1,reps:0,ease:2.5};return p.reps===0?"1 dia":p.reps===1?"6 dias":Math.round((p.interval||1)*(p.ease||2.5))+" dias";})()} </span></button>
-</div>
-<div style="display:flex;gap:9px;margin-bottom:20px">
-  <button class="btn btn-secondary" onclick="nextVocabCard()">→ Pular</button>
-  <button class="btn btn-secondary" onclick="speak('${(card.sentence||card.word).replace(/'/g,"\\'")}')">🔊 Ouvir</button>
-  <button class="btn btn-secondary btn-sm" onclick="sendChunkToAI('${card.word.replace(/'/g,"\\'")}')">Praticar ✦</button>
-</div>
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div style="font-size:14px;font-weight:600">Minhas Estatísticas</div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-    ${[{l:"Hoje",v:todayWords,c:"#a78bfa"},{l:"Esta semana",v:weekWords,c:"#10b981"},{l:"Este mês",v:monthWords,c:"#3b82f6"}].map(s=>`<div class="stat-card"><div class="stat-val" style="font-size:18px;color:${s.c}">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">palavras</div></div>`).join("")}
-  </div>
-  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
-    ${[{k:"all",l:"Todas ("+list.length+")"},{k:"learned",l:"Aprendidas ("+learned+")"},{k:"review",l:"Para revisar"},{k:"mine",l:"Minhas ("+(S.userVocab||[]).length+")"}].map(f=>`<button class="filter-btn${S.vocabFilter===f.k?" sel":""}" onclick="S.vocabFilter='${f.k}';render()">${f.l}</button>`).join("")}
-  </div>
-  ${filteredList.length===0?`<p style="font-size:13px;color:#555;text-align:center;padding:16px 0">Nenhuma palavra nesta categoria.</p>`:""}
-  ${filteredList.map(v=>`
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:#0c0c18;border-radius:8px;margin-bottom:5px;opacity:${S.vocabSRS[v.id]?.status==="learned"?.45:1}">
-    <div style="display:flex;gap:7px;align-items:center">
-      ${v.chunk?`<span class="badge badge-purple" style="font-size:9px">chunk</span>`:""}
-      ${v.id>=8000?`<span class="badge badge-blue" style="font-size:9px">meu</span>`:""}
-      <span style="font-size:13px;font-weight:500">${v.word}</span>
-    </div>
-    <div style="display:flex;gap:7px;align-items:center">
-      <span style="font-size:11px;color:#555">${v.pt}</span>
-      ${S.vocabSRS[v.id]?.status==="learned"?`<span style="color:#059669;font-size:12px" title="Aprendida">✓</span>`:""}
-      ${S.vocabSRS[v.id]?.status==="review"?`<span style="color:#f59e0b;font-size:12px" title="Para revisar">↺</span>`:""}
-      ${!S.vocabSRS[v.id]?`<span style="color:#444;font-size:12px" title="Nova">·</span>`:""}
-    </div>
-  </div>`).join("")}
-</div>`;
+function buildStudyQueue(){
+  const due=getDueCards();
+  due.sort((a,b)=>{
+    if(a.srs.status==="new"&&b.srs.status!=="new") return -1;
+    if(b.srs.status==="new"&&a.srs.status!=="new") return 1;
+    return (a.srs.nextReview||0)-(b.srs.nextReview||0);
+  });
+  S.studyQueue=due.map(c=>c.id);
+  S.studyIdx=0; S.studyFlipped=false; S.studySessionDone=false;
 }
-
-function checkCtxAnswer(word,sentence){
-  const inp=document.getElementById("ctxInp");
-  const answer=(inp?inp.value:"").trim().toLowerCase();
-  const correct=word.trim().toLowerCase();
-  const ok=answer===correct||(correct.includes(answer)&&answer.length>2);
-  S.vocabCtxFeedback={ok,hint:word};
-  render();
-}
-function flipCard(){
-  S.vocabFlipped=!S.vocabFlipped;
-  S.vocabCtxAnswer=""; S.vocabCtxFeedback=null;
-  if(S.vocabFlipped){ const list=getAllVocab(); const card=list[S.vocabIdx%list.length]; if(card) speak(card.sentence||card.word); }
-  render();
-}
-function nextVocabCard(){ const l=getAllVocab(); S.vocabIdx=(S.vocabIdx+1)%Math.max(1,l.length); S.vocabFlipped=false; S.vocabCtxAnswer=""; S.vocabCtxFeedback=null; render(); }
 
 function srsCompute(id,quality){
-  const now=Date.now(), day=864e5;
-  const prev=S.vocabSRS[id]||{ease:2.5,interval:1,reps:0};
-  let {ease,interval,reps}=prev;
-  if(quality<3){ reps=0; interval=1; }
+  const now=Date.now(),day=864e5;
+  const card=S.deck.find(c=>c.id===id);
+  const prev=card?card.srs:{ease:2.5,interval:1,reps:0};
+  let{ease,interval,reps}=prev;
+  if(quality<3){reps=0;interval=1;}
   else{
     if(reps===0) interval=1;
     else if(reps===1) interval=6;
@@ -1702,138 +1232,327 @@ function srsCompute(id,quality){
     if(ease<1.3) ease=1.3;
     if(ease>2.5) ease=2.5;
   }
-  const status=quality>=4?"learned":"review";
-  const nextReview=now+(interval*day);
-  return {ease,interval,reps,status,nextReview,lastReview:now,quality};
+  const status=quality>=4?"learned":reps===0?"new":"learning";
+  return{ease,interval,reps,status,nextReview:now+(interval*day),lastReview:now,quality};
 }
 
-function srsAnswer(id,difficulty){
+function studyAnswer(difficulty){
   const qualityMap={hard:1,medium:3,easy:5};
-  const quality=qualityMap[difficulty]||3;
-  const result=srsCompute(id,quality);
-  S.vocabSRS[id]=result;
-
-  const nextDate=new Date(result.nextReview).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
-  const dayLabel=result.interval===1?"amanhã":result.interval===6?"em 6 dias":"em "+result.interval+" dias";
+  const id=S.studyQueue[S.studyIdx];
+  const card=S.deck.find(c=>c.id===id);
+  if(!card) return;
+  card.srs=srsCompute(id,qualityMap[difficulty]||3);
+  const dayLabel=card.srs.interval===1?"amanhã":card.srs.interval===6?"em 6 dias":"em "+card.srs.interval+" dias";
   const colorMap={hard:"#f87171",medium:"#fcd34d",easy:"#6ee7b7"};
   const iconMap={hard:"😰",medium:"🤔",easy:"😊"};
-  const statusLabel=result.status==="learned"?"✨ Dominada!":"⟳ Para revisar";
-  showToast(
-    iconMap[difficulty]+" "+statusLabel+" · Próxima revisão: "+dayLabel+" ("+nextDate+")",
-    colorMap[difficulty],
-    3000
-  );
-
-  completeTask("vocabulary"); nextVocabCard();
+  showToast(iconMap[difficulty]+" Próxima revisão: "+dayLabel,colorMap[difficulty],2500);
+  if(S.studyIdx<S.studyQueue.length-1){ S.studyIdx++; S.studyFlipped=false; }
+  else{ S.studySessionDone=true; completeTask("vocabulary"); }
+  saveState(); render();
 }
 
-function reviewAnswer(id,difficulty,idx,total){
-  const qualityMap={hard:1,medium:3,easy:5};
-  const result=srsCompute(id,qualityMap[difficulty]||3);
-  S.vocabSRS[id]=result;
-
-  const nextDate=new Date(result.nextReview).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
-  const dayLabel=result.interval===1?"amanhã":result.interval===6?"em 6 dias":"em "+result.interval+" dias";
-  const colorMap={hard:"#f87171",medium:"#fcd34d",easy:"#6ee7b7"};
-  const iconMap={hard:"😰",medium:"🤔",easy:"😊"};
-  showToast(
-    iconMap[difficulty]+" Próxima revisão: "+dayLabel+" ("+nextDate+")",
-    colorMap[difficulty],
-    2500
-  );
-
-  S.reviewFlipped=false; S.reviewIdx=idx<total-1?idx+1:0;
-  buildReviewQueue(); saveState(); render();
+function deleteCard(id){
+  S.deck=S.deck.filter(c=>c.id!==id);
+  saveState(); render();
 }
 
-async function generateVocab(){
-  const topic=translateTopic(getActiveTopic("vocabTopic","vocabTopicCustom"));
-  if(!topic||S.vocabGenLoading) return;
-  S.vocabGenLoading=true; render();
+async function generateWordCards(){
+  const word=(S.wordInput||"").trim();
+  if(!word||S.wordLoading) return;
+  S.wordLoading=true; S.wordCards=[]; render();
   try{
-    const parsed=JSON.parse(cleanJson(await callAI([{role:"user",content:P_VOCAB_GENERATE(topic,S.level)}])));
-    S.vocabGenWords=[...(S.vocabGenWords||[]),...parsed.map((w,i)=>({...w,id:7000+Date.now()+i,cat:topic}))];
-  }catch(e){ showToast(e.message||"Erro ao gerar vocabulário. Tente novamente.","#f87171"); }finally{ S.vocabGenLoading=false; render(); }
+    const raw=await callAI([{role:"user",content:P_VOCAB_WORD_CARDS(word,S.level)}]);
+    S.wordCards=JSON.parse(cleanJson(raw)).map(c=>({...c,selected:true}));
+  }catch(e){ showToast(e.message||"Erro ao gerar cards.","#f87171"); }
+  finally{ S.wordLoading=false; render(); }
 }
 
-async function generateCustomVocab(){
-  const word=S.vocabCustomWord.trim();
-  if(!word||S.vocabCustomLoading) return;
-  S.vocabCustomLoading=true; render();
+async function generateThemeCards(theme){
+  const topic=translateTopic(theme||(S.lisTopic?translateTopic(S.lisTopic):"")|(S.lisTopicCustom||"").trim()||"daily life");
+  S.themeLoading=true; S.themeCards=[]; render();
   try{
-    S.vocabCustomResult=JSON.parse(cleanJson(await callAI([{role:"user",content:P_VOCAB_CUSTOM(word,S.level)}])));
-  }catch(e){ showToast(e.message||"Erro ao gerar palavra. Tente novamente.","#f87171"); }
-  S.vocabCustomLoading=false; render();
+    const raw=await callAI([{role:"user",content:P_VOCAB_THEME_CARDS(topic,S.level)}]);
+    S.themeCards=JSON.parse(cleanJson(raw)).map(c=>({...c,selected:true}));
+  }catch(e){ showToast(e.message||"Erro ao gerar cards.","#f87171"); }
+  finally{ S.themeLoading=false; render(); }
 }
 
-function addCustomVocab(){
-  if(!S.vocabCustomResult) return;
-  if(!S.userVocab) S.userVocab=[];
-  const newWord={...S.vocabCustomResult,id:8000+Date.now(),cat:"meu"};
-  S.userVocab.push(newWord);
-  S.vocabCustomResult=null; S.vocabCustomWord="";
-  saveState(); alert(`"${newWord.word}" adicionada ao seu banco! ✓`);
-  render();
+function addSelectedToDeck(sourceArray,source,keyword){
+  const selected=sourceArray.filter(c=>c.selected);
+  if(!selected.length){ showToast("Selecione pelo menos 1 card!","#f59e0b"); return; }
+  const n=addCardsToDeck(selected,source,keyword);
+  showToast(`✓ ${n} card${n>1?"s":""} adicionado${n>1?"s":""} ao baralho!`,"#6ee7b7");
+  if(source==="ai_word"){S.wordCards=[];S.wordInput="";}
+  if(source==="ai_theme"){S.themeCards=[];}
+  S.deckView="main"; render();
 }
 
-function renderReview(){
-  buildReviewQueue();
-  const allVocab=getAllVocab();
-  const dueItems=S.reviewQueue.map(id=>allVocab.find(v=>v.id===id)).filter(Boolean);
-  const revIdx=Math.min(S.reviewIdx,Math.max(0,dueItems.length-1));
-  const current=dueItems[revIdx];
-  const srsData=S.vocabSRS;
-  const medCount=Object.values(srsData).filter(v=>v.status==="review"&&v.difficulty==="medium").length;
-  const easyCount=Object.values(srsData).filter(v=>v.status==="review"&&v.difficulty==="easy").length;
-  const learnedCount=Object.values(srsData).filter(v=>v.status==="learned").length;
+function addManualCard(){
+  const front=(S.manualFront||"").trim();
+  const back=(S.manualBack||"").trim();
+  if(!front||!back){showToast("Preencha a frase e a tradução!","#f59e0b");return;}
+  addCardsToDeck([{front,back,highlight:""}],"manual","");
+  S.manualFront=""; S.manualBack="";
+  showToast("✓ Card adicionado ao baralho!","#6ee7b7"); render();
+}
+
+function renderVocab(){
+  if(!S.deck) S.deck=[];
+  if(S.deckView==="study") return renderStudySession();
+  if(S.deckView==="add") return renderAddCards();
+  return renderDeckMain();
+}
+
+function renderDeckMain(){
+  const total=S.deck.length;
+  const due=getDueCards().length;
+  const learned=S.deck.filter(c=>c.srs&&c.srs.status==="learned").length;
+  const newCards=S.deck.filter(c=>!c.srs||c.srs.status==="new").length;
   return `
-<div class="page-title">↻ Revisão com Repetição Espaçada</div>
-<div class="page-sub">Revisar palavras no momento exato fixa o vocabulário permanentemente.</div>
-<div class="srs-info">
-  <div style="font-size:13px;font-weight:600;color:#a78bfa;margin-bottom:8px">Como funciona?</div>
-  <div style="font-size:12px;color:#888;line-height:1.75">😰 <strong style="color:#f87171">Difícil</strong> → revisão amanhã &nbsp;|&nbsp; 🤔 <strong style="color:#fcd34d">Médio</strong> → em 3 dias &nbsp;|&nbsp; 😊 <strong style="color:#6ee7b7">Fácil</strong> → em 7 dias</div>
+<div class="page-title">⊟ Vocabulary</div>
+<div class="page-sub">Seu baralho pessoal com repetição espaçada — igual ao Anki, mas com IA.</div>
+${timerWidget("vocabulary")}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+  <div class="stat-card"><div class="stat-val" style="color:#a78bfa">${total}</div><div class="stat-label">Total de cards</div></div>
+  <div class="stat-card"><div class="stat-val" style="color:#f59e0b">${due}</div><div class="stat-label">Para estudar hoje</div></div>
+  <div class="stat-card"><div class="stat-val" style="color:#6ee7b7">${learned}</div><div class="stat-label">Dominadas</div></div>
 </div>
-<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-  <button class="btn btn-secondary btn-sm${S.reviewExpressMode?"":" sel"}" onclick="S.reviewExpressMode=false;buildReviewQueue();S.reviewIdx=0;S.reviewFlipped=false;render()">Revisão normal ${S.reviewQueue.length>0?"("+S.reviewQueue.length+")":""}</button>
-  <button class="btn btn-secondary btn-sm${S.reviewExpressMode?" sel":""}" onclick="S.reviewExpressMode=true;buildReviewQueue();S.reviewIdx=0;S.reviewFlipped=false;render()">⚡ Revisão expressa (todas as palavras)</button>
-</div>
-${dueItems.length===0?`
-<div class="card" style="text-align:center;padding:36px 20px">
-  <div style="font-size:30px;margin-bottom:10px">✓</div>
-  <div style="font-weight:700;font-size:15px;margin-bottom:6px">${S.reviewExpressMode?"Nenhuma palavra ainda!":"Tudo em dia!"}</div>
-  <p style="font-size:13px;color:#6b7280">${S.reviewExpressMode?"Estude no Vocabulary primeiro para criar seu banco.":"Nenhuma palavra para revisar agora."}</p>
-  <button class="btn btn-secondary" style="margin-top:14px" onclick="showTab('vocabulary')">→ Ir para Vocabulary</button>
-</div>
-`:`
-<div class="card" style="margin-bottom:10px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <span style="font-size:13px;font-weight:600">${revIdx+1} / ${dueItems.length} ${S.reviewExpressMode?"(modo expresso)":"para revisar"}</span>
-    <span class="badge badge-amber">${dueItems.length} palavra${dueItems.length>1?"s":""}</span>
-  </div>
-  <div class="review-card" onclick="S.reviewFlipped=!S.reviewFlipped;render()">
-    ${!S.reviewFlipped?`
-      <div style="font-size:10px;color:#555;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Clique para revelar</div>
-      <div style="font-size:24px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#a78bfa">${current.word}</div>
-    `:`
-      <div style="font-size:13px;color:#f59e0b;font-weight:700;margin-bottom:7px">🇧🇷 ${current.pt}</div>
-      <div style="font-size:13px;color:#d1d5db;font-style:italic">"${current.sentence}"</div>
-      <button style="background:none;border:none;cursor:pointer;color:#a78bfa;font-size:13px;margin-top:10px" onclick="event.stopPropagation();speak('${(current.word||"").replace(/'/g,"\\'")}')">🔊 Ouvir</button>
-    `}
-  </div>
-  ${S.reviewFlipped?`
-  <div style="font-size:12px;color:#6b7280;text-align:center;margin-bottom:10px">Você lembrou?</div>
-  <div style="display:flex;gap:8px">
-    <button class="btn btn-hard" onclick="reviewAnswer(${current.id},'hard',${revIdx},${dueItems.length})">😰 Não<br><span style="font-size:10px">+1 dia</span></button>
-    <button class="btn btn-medium" onclick="reviewAnswer(${current.id},'medium',${revIdx},${dueItems.length})">🤔 Mais ou menos<br><span style="font-size:10px">+3 dias</span></button>
-    <button class="btn btn-easy" onclick="reviewAnswer(${current.id},'easy',${revIdx},${dueItems.length})">😊 Lembrei!<br><span style="font-size:10px">+7 dias</span></button>
-  </div>`:`<p style="font-size:12px;color:#555;text-align:center">Clique no card para ver a tradução</p>`}
+${due>0?`
+<div style="background:#0f0a1e;border:1px solid #3d1d6b;border-radius:14px;padding:20px;text-align:center;margin-bottom:14px">
+  <div style="font-size:32px;margin-bottom:8px">🃏</div>
+  <div style="font-size:16px;font-weight:700;color:#e2e0f0;margin-bottom:4px">${due} card${due>1?"s":""} para revisar</div>
+  <div style="font-size:12px;color:#888;margin-bottom:16px">${newCards} novo${newCards!==1?"s":""} · ${due-newCards} revisão</div>
+  <button class="btn btn-primary" style="font-size:15px;padding:11px 28px" onclick="buildStudyQueue();S.deckView='study';render()">▶ Estudar agora</button>
+</div>`:`
+<div style="background:#031710;border:1px solid #065f46;border-radius:14px;padding:20px;text-align:center;margin-bottom:14px">
+  <div style="font-size:32px;margin-bottom:8px">✅</div>
+  <div style="font-size:15px;font-weight:700;color:#6ee7b7;margin-bottom:4px">Tudo em dia!</div>
+  <div style="font-size:12px;color:#888">Nenhum card para revisar agora. Adicione mais cards ao baralho.</div>
 </div>`}
+<button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:14px;font-size:14px" onclick="S.deckView='add';S.addTab='word';S.wordCards=[];S.themeCards=[];render()">
+  + Adicionar cards ao baralho
+</button>
+${total>0?`
 <div class="card">
-  <div style="font-size:13px;font-weight:600;margin-bottom:10px">Agenda de Revisão</div>
-  ${[{day:"Hoje",n:S.reviewExpressMode?0:dueItems.length,c:"#f59e0b"},{day:"Em 3 dias",n:medCount,c:"#3b82f6"},{day:"Em 7 dias",n:easyCount,c:"#10b981"},{day:"Dominadas",n:learnedCount,c:"#8b5cf6"}].map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 13px;background:#0c0c18;border-radius:10px;margin-bottom:7px"><div style="width:9px;height:9px;border-radius:50%;background:${r.c};flex-shrink:0"></div><div style="flex:1;font-size:13px">${r.day}</div><div style="font-size:13px;color:#666">${r.n} palavra${r.n!==1?"s":""}</div></div>`).join("")}
+  <div style="font-size:14px;font-weight:600;margin-bottom:14px">Meus cards (${total})</div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
+    ${["todos","novos","aprendendo","dominados"].map(f=>`
+    <button class="filter-btn${(S.vocabFilter||"todos")===f?" sel":""}" onclick="S.vocabFilter='${f}';render()">${f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join("")}
+  </div>
+  ${(()=>{
+    let list=S.deck;
+    if(S.vocabFilter==="novos") list=S.deck.filter(c=>!c.srs||c.srs.status==="new");
+    else if(S.vocabFilter==="aprendendo") list=S.deck.filter(c=>c.srs&&c.srs.status==="learning");
+    else if(S.vocabFilter==="dominados") list=S.deck.filter(c=>c.srs&&c.srs.status==="learned");
+    if(!list.length) return `<div style="text-align:center;padding:20px;color:#555;font-size:13px">Nenhum card nesta categoria.</div>`;
+    return list.slice().reverse().map(c=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;background:#0c0c18;border-radius:10px;margin-bottom:7px;border:1px solid #1a1828">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:#e2e0f0;margin-bottom:3px">${esc(c.front)}</div>
+        <div style="font-size:12px;color:#6b7280">${esc(c.back)}</div>
+        ${c.highlight?`<span style="font-size:10px;background:#1e1a2e;color:#a78bfa;padding:2px 7px;border-radius:4px;margin-top:4px;display:inline-block">${esc(c.highlight)}</span>`:""}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+        <span style="font-size:10px;color:${c.srs&&c.srs.status==="learned"?"#6ee7b7":c.srs&&c.srs.status==="learning"?"#f59e0b":"#555"}">${c.srs?c.srs.status==="learned"?"✓ dominado":c.srs.status==="learning"?"aprendendo":"novo":"novo"}</span>
+        <div style="display:flex;gap:5px">
+          <button style="background:none;border:none;color:#a78bfa;cursor:pointer;font-size:13px" onclick="speak('${(c.front||"").replace(/'/g,"\\'")}')">🔊</button>
+          <button style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px" onclick="if(confirm('Remover este card?'))deleteCard(${c.id})">✕</button>
+        </div>
+      </div>
+    </div>`).join("");
+  })()}
+</div>`:`
+<div style="text-align:center;padding:30px;color:#555;font-size:13px">
+  <div style="font-size:30px;margin-bottom:10px">🃏</div>
+  Seu baralho está vazio.<br>Adicione cards para começar!
+</div>`}`;
+}
+
+function renderAddCards(){
+  return `
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+  <button class="btn btn-secondary btn-sm" onclick="S.deckView='main';render()">← Voltar</button>
+  <div class="page-title" style="margin:0">+ Adicionar Cards</div>
+</div>
+<div style="display:flex;gap:6px;margin-bottom:16px">
+  ${[{k:"word",l:"📝 Por palavra"},{k:"theme",l:"🎨 Por tema"},{k:"manual",l:"✍️ Manual"}].map(t=>`
+  <button class="filter-btn${S.addTab===t.k?" sel":""}" style="flex:1;text-align:center;padding:9px 8px" onclick="S.addTab='${t.k}';S.wordCards=[];S.themeCards=[];render()">${t.l}</button>`).join("")}
+</div>
+${S.addTab==="word"?renderAddByWord():""}
+${S.addTab==="theme"?renderAddByTheme():""}
+${S.addTab==="manual"?renderAddManual():""}`;
+}
+
+function renderAddByWord(){
+  return `
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:6px">Digite uma palavra ou expressão</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:12px">A IA cria 5 frases com essa palavra no seu nível (${S.level}).</div>
+  <div style="display:flex;gap:9px;margin-bottom:14px">
+    <input class="inp" id="wordInp" placeholder="ex: opportunity, break even, look forward to..."
+      value="${esc(S.wordInput)}"
+      oninput="S.wordInput=this.value"
+      onkeydown="if(event.key==='Enter')generateWordCards()"
+      style="flex:1"/>
+    <button class="btn btn-primary" onclick="generateWordCards()" ${S.wordLoading||!S.wordInput.trim()?"disabled":""}>
+      ${S.wordLoading?"⏳ Gerando...":"Gerar 5 frases"}
+    </button>
+  </div>
+  ${S.wordLoading?`<div style="text-align:center;padding:20px;color:#a78bfa;font-size:13px">⏳ Gerando frases com "${esc(S.wordInput)}"...</div>`:""}
+  ${S.wordCards.length>0?`
+  <div style="font-size:13px;font-weight:600;color:#6ee7b7;margin-bottom:12px">✓ ${S.wordCards.length} frases geradas — selecione as que quer adicionar:</div>
+  ${S.wordCards.map((c,i)=>`
+  <div style="display:flex;gap:10px;padding:13px;background:${c.selected?"#0d1a0d":"#0c0c18"};border:1px solid ${c.selected?"#065f46":"#1a1828"};border-radius:11px;margin-bottom:8px;cursor:pointer;transition:all .2s"
+    onclick="S.wordCards[${i}].selected=!S.wordCards[${i}].selected;render()">
+    <div style="width:22px;height:22px;border-radius:6px;border:2px solid ${c.selected?"#059669":"#2d2a40"};background:${c.selected?"#059669":"transparent"};display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:12px;margin-top:2px">${c.selected?"✓":""}</div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:600;color:#e2e0f0;margin-bottom:5px">${esc(c.front)}</div>
+      <div style="font-size:12px;color:#6b7280">${esc(c.back)}</div>
+    </div>
+    <button style="background:none;border:none;cursor:pointer;color:#a78bfa;font-size:14px;align-self:flex-start" onclick="event.stopPropagation();speak('${(c.front||"").replace(/'/g,"\\'")}')">🔊</button>
+  </div>`).join("")}
+  <div style="display:flex;gap:9px;margin-top:4px">
+    <button class="btn btn-success" onclick="addSelectedToDeck(S.wordCards,'ai_word',S.wordInput)">
+      + Adicionar selecionados (${S.wordCards.filter(c=>c.selected).length})
+    </button>
+    <button class="btn btn-secondary" onclick="S.wordCards=[];S.wordInput='';render()">✕ Limpar</button>
+  </div>`:""}
 </div>`;
 }
 
+function renderAddByTheme(){
+  return `
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:6px">Escolha um tema</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:12px">A IA gera 6 frases contextualizadas sobre o tema no seu nível (${S.level}).</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+    ${TOPICS.map(t=>`<button class="topic-btn" onclick="generateThemeCards('${t}')">${t}</button>`).join("")}
+  </div>
+  <div style="display:flex;gap:9px;margin-bottom:14px">
+    <input class="inp" id="themeCustomInp" placeholder="Ou digite um tema..." style="flex:1"
+      onkeydown="if(event.key==='Enter'&&this.value.trim())generateThemeCards(this.value.trim())"/>
+    <button class="btn btn-primary" onclick="const v=document.getElementById('themeCustomInp').value.trim();if(v)generateThemeCards(v)" ${S.themeLoading?"disabled":""}>
+      ${S.themeLoading?"⏳ Gerando...":"Gerar frases"}
+    </button>
+  </div>
+  ${S.themeLoading?`<div style="text-align:center;padding:20px;color:#a78bfa;font-size:13px">⏳ Gerando frases...</div>`:""}
+  ${S.themeCards.length>0?`
+  <div style="font-size:13px;font-weight:600;color:#6ee7b7;margin-bottom:12px">✓ ${S.themeCards.length} frases geradas — selecione as que quer adicionar:</div>
+  ${S.themeCards.map((c,i)=>`
+  <div style="display:flex;gap:10px;padding:13px;background:${c.selected?"#0d1a0d":"#0c0c18"};border:1px solid ${c.selected?"#065f46":"#1a1828"};border-radius:11px;margin-bottom:8px;cursor:pointer;transition:all .2s"
+    onclick="S.themeCards[${i}].selected=!S.themeCards[${i}].selected;render()">
+    <div style="width:22px;height:22px;border-radius:6px;border:2px solid ${c.selected?"#059669":"#2d2a40"};background:${c.selected?"#059669":"transparent"};display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:12px;margin-top:2px">${c.selected?"✓":""}</div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:600;color:#e2e0f0;margin-bottom:5px">${esc(c.front)}</div>
+      <div style="font-size:12px;color:#6b7280">${esc(c.back)}</div>
+      ${c.highlight?`<span style="font-size:10px;background:#1e1a2e;color:#a78bfa;padding:2px 7px;border-radius:4px;margin-top:5px;display:inline-block">${esc(c.highlight)}</span>`:""}
+    </div>
+    <button style="background:none;border:none;cursor:pointer;color:#a78bfa;font-size:14px;align-self:flex-start" onclick="event.stopPropagation();speak('${(c.front||"").replace(/'/g,"\\'")}')">🔊</button>
+  </div>`).join("")}
+  <div style="display:flex;gap:9px;margin-top:4px">
+    <button class="btn btn-success" onclick="addSelectedToDeck(S.themeCards,'ai_theme','tema')">
+      + Adicionar selecionados (${S.themeCards.filter(c=>c.selected).length})
+    </button>
+    <button class="btn btn-secondary" onclick="S.themeCards=[];render()">✕ Limpar</button>
+  </div>`:""}
+</div>`;
+}
+
+function renderAddManual(){
+  return `
+<div class="card">
+  <div style="font-size:14px;font-weight:600;margin-bottom:6px">Adicionar card manualmente</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:16px">Escreva a frase em inglês e a tradução.</div>
+  <label style="font-size:12px;color:#888;display:block;margin-bottom:5px">Frente (inglês)</label>
+  <textarea class="inp" rows="2" placeholder="ex: I look forward to working with you." style="margin-bottom:12px;resize:none" oninput="S.manualFront=this.value">${esc(S.manualFront||"")}</textarea>
+  <label style="font-size:12px;color:#888;display:block;margin-bottom:5px">Verso (português)</label>
+  <textarea class="inp" rows="2" placeholder="ex: Estou animado para trabalhar com você." style="margin-bottom:16px;resize:none" oninput="S.manualBack=this.value">${esc(S.manualBack||"")}</textarea>
+  <button class="btn btn-success" onclick="addManualCard()" ${!S.manualFront||!S.manualBack?"disabled":""}>+ Adicionar ao baralho</button>
+</div>`;
+}
+
+function renderStudySession(){
+  if(S.studySessionDone){
+    return `
+<div style="text-align:center;padding:40px 20px">
+  <div style="font-size:48px;margin-bottom:16px">🎉</div>
+  <div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#a78bfa;margin-bottom:8px">Sessão concluída!</div>
+  <div style="font-size:13px;color:#888;margin-bottom:24px">Você revisou ${S.studyQueue.length} card${S.studyQueue.length!==1?"s":""} hoje. +25 XP!</div>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="S.deckView='main';S.studySessionDone=false;render()">← Voltar ao baralho</button>
+    <button class="btn btn-secondary" onclick="S.deckView='add';S.addTab='word';render()">+ Adicionar mais cards</button>
+  </div>
+</div>`;
+  }
+  const id=S.studyQueue[S.studyIdx];
+  const card=S.deck.find(c=>c.id===id);
+  if(!card) return `<div style="text-align:center;padding:40px;color:#555">Card não encontrado. <button class="btn btn-secondary" onclick="S.deckView='main';render()">← Voltar</button></div>`;
+  const total=S.studyQueue.length;
+  const pct=Math.round((S.studyIdx/Math.max(total,1))*100);
+  const previewInterval=(quality)=>{
+    const p=card.srs||{ease:2.5,interval:1,reps:0};
+    if(quality<3) return "amanhã";
+    if(p.reps===0) return "1 dia";
+    if(p.reps===1) return "6 dias";
+    const iv=Math.round((p.interval||1)*(p.ease||2.5));
+    return iv<=1?"amanhã":iv+"d";
+  };
+  return `
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+  <button class="btn btn-secondary btn-sm" onclick="S.deckView='main';S.studyFlipped=false;render()">← Sair</button>
+  <span style="font-size:12px;color:#888">${S.studyIdx+1} / ${total}</span>
+  <span style="font-size:12px;color:#a78bfa">${S.deck.filter(c=>c.srs&&c.srs.status==="learned").length} dominadas</span>
+</div>
+<div class="progress-wrap" style="margin-bottom:20px">
+  <div class="progress-bar" style="width:${pct}%"></div>
+</div>
+<div style="background:#0f0f1a;border:1px solid ${S.studyFlipped?"#3d1d6b":"#2d2a40"};border-radius:18px;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 24px;margin-bottom:16px;transition:border-color .3s">
+  <div style="font-size:10px;color:#555;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px">${S.studyFlipped?"🇧🇷 Tradução":"🇺🇸 Inglês — clique em Mostrar resposta"}</div>
+  ${!S.studyFlipped?`
+    <div style="font-size:20px;font-weight:700;color:#e2e0f0;line-height:1.4;margin-bottom:16px">${esc(card.front)}</div>
+    ${card.highlight?`<span style="font-size:12px;background:#1e1a2e;color:#a78bfa;padding:4px 12px;border-radius:6px">🔑 ${esc(card.highlight)}</span>`:""}
+  `:`
+    <div style="font-size:18px;font-weight:600;color:#c4b5fd;line-height:1.5;margin-bottom:12px">${esc(card.back)}</div>
+    <div style="font-size:13px;color:#6b7280;font-style:italic;border-top:1px solid #1a1828;padding-top:12px;margin-top:4px;width:100%">${esc(card.front)}</div>
+  `}
+</div>
+${!S.studyFlipped?`
+<button class="btn btn-primary" style="font-size:15px;padding:12px 32px;width:100%;justify-content:center" onclick="S.studyFlipped=true;speak('${(card.front||"").replace(/'/g,"\\'")}');render()">
+  Mostrar resposta
+</button>
+`:`
+<div>
+  <div style="font-size:12px;color:#6b7280;text-align:center;margin-bottom:12px">Você lembrou?</div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-hard" style="flex:1;flex-direction:column;gap:3px;padding:12px 8px" onclick="studyAnswer('hard')">
+      😰 Difícil<br><span style="font-size:10px;opacity:.8">${previewInterval(1)}</span>
+    </button>
+    <button class="btn btn-medium" style="flex:1;flex-direction:column;gap:3px;padding:12px 8px" onclick="studyAnswer('medium')">
+      🤔 Médio<br><span style="font-size:10px;opacity:.8">${previewInterval(3)}</span>
+    </button>
+    <button class="btn btn-easy" style="flex:1;flex-direction:column;gap:3px;padding:12px 8px" onclick="studyAnswer('easy')">
+      😊 Fácil<br><span style="font-size:10px;opacity:.8">${previewInterval(5)}</span>
+    </button>
+  </div>
+  <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="speak('${(card.front||"").replace(/'/g,"\\'")}')">🔊 Ouvir novamente</button>
+</div>
+`}`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// REVIEW — redireciona para o baralho
+// ══════════════════════════════════════════════════════════════════
+function renderReview(){
+  S.tab="vocabulary";
+  if(!S.deck) S.deck=[];
+  buildStudyQueue();
+  S.deckView=S.studyQueue.length>0?"study":"main";
+  return renderVocab();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// AI COACH
+// ══════════════════════════════════════════════════════════════════
 function getQuickPrompts(){
   return {
     Beginner:["Correct this: I go to work by foot","What means 'actually'?","Give me a simple exercise","How do I say 'saudade' in English?"],
@@ -1880,19 +1599,18 @@ async function sendAIMessage(){
   render();
   setTimeout(()=>{const ca=document.getElementById("chatArea");if(ca)ca.scrollTop=ca.scrollHeight;},50);
   try{
-    const reply=await callAI([
-      {role:"system",content:P_AI_COACH_SYSTEM(S.level)},
-      ...S.aiHistory.slice(-14)
-    ]);
+    const reply=await callAI([{role:"system",content:P_AI_COACH_SYSTEM(S.level)},...S.aiHistory.slice(-14)]);
     S.aiHistory.push({role:"assistant",content:reply});
   }catch(e){
-    const aiErr=e.message||"❌ Erro de conexão. Tente novamente.";
-    S.aiHistory.push({role:"assistant",content:aiErr});
+    S.aiHistory.push({role:"assistant",content:e.message||"❌ Erro de conexão."});
   }
   S.aiLoading=false; saveState(); render();
   setTimeout(()=>{const ca=document.getElementById("chatArea");if(ca)ca.scrollTop=ca.scrollHeight;},50);
 }
 
+// ══════════════════════════════════════════════════════════════════
+// EVOLUÇÃO
+// ══════════════════════════════════════════════════════════════════
 function renderEvolucao(){
   const last30=Array.from({length:30},(_,i)=>{
     const d=new Date(); d.setDate(d.getDate()-29+i);
@@ -1900,24 +1618,19 @@ function renderEvolucao(){
     const log=S.studyLog[key]||{};
     const modules=Object.keys(log).length;
     const isToday=i===29;
-    return {key,modules,isToday,day:d.getDate(),month:d.getMonth()+1,weekday:["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]};
+    return{key,modules,isToday,day:d.getDate(),month:d.getMonth()+1,weekday:["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]};
   });
   const daysStudied=last30.filter(d=>d.modules>0).length;
   const avgModules=daysStudied>0?(last30.reduce((a,d)=>a+d.modules,0)/daysStudied).toFixed(1):0;
   const bestStreak=(()=>{let max=0,cur=0;last30.forEach(d=>{if(d.modules>0){cur++;max=Math.max(max,cur);}else cur=0;});return max;})();
   const maxModules=Math.max(...last30.map(d=>d.modules),1);
-  const learned=Object.values(S.vocabSRS).filter(v=>v.status==="learned").length;
-  const totalReviewed=Object.keys(S.vocabSRS).length;
+  const totalCards=S.deck.length;
+  const learned=S.deck.filter(c=>c.srs&&c.srs.status==="learned").length;
   return `
 <div class="page-title">📈 Minha Evolução</div>
 <div class="page-sub">Acompanhe seu progresso real ao longo do tempo.</div>
 <div class="stats-grid">
-  ${[
-    {v:daysStudied,l:"Dias estudados",s:"últimos 30 dias"},
-    {v:S.streak+"d",l:"Streak atual",s:"dias seguidos"},
-    {v:bestStreak+"d",l:"Melhor streak",s:"últimos 30 dias"},
-    {v:avgModules,l:"Módulos/dia",s:"média dos dias ativos"},
-  ].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
+  ${[{v:daysStudied,l:"Dias estudados",s:"últimos 30 dias"},{v:S.streak+"d",l:"Streak atual",s:"dias seguidos"},{v:bestStreak+"d",l:"Melhor streak",s:"últimos 30 dias"},{v:avgModules,l:"Módulos/dia",s:"média dos dias ativos"}].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
 </div>
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:16px">Atividade nos últimos 30 dias</div>
@@ -1926,54 +1639,29 @@ function renderEvolucao(){
       const h=d.modules===0?4:Math.max(12,Math.round((d.modules/maxModules)*80));
       const color=d.isToday?"#a78bfa":d.modules>0?"#5b21b6":"#1a1828";
       const border=d.isToday?"2px solid #a78bfa":"none";
-      return `<div style="flex:1;height:${h}px;background:${color};border-radius:3px;border:${border}" title="${d.weekday} ${d.day}/${d.month}: ${d.modules} módulo(s)"></div>`;
+      return `<div style="flex:1;height:${h}px;background:${color};border-radius:3px;border:${border}" title="${d.weekday} ${d.day}/${d.month}: ${d.modules} módulos"></div>`;
     }).join("")}
-  </div>
-  <div style="display:flex;justify-content:space-between;font-size:10px;color:#555">
-    <span>${last30[0].day+"/"+last30[0].month}</span>
-    <span>${last30[14].day+"/"+last30[14].month}</span>
-    <span>hoje</span>
-  </div>
-  <div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap">
-    <span style="font-size:11px;color:#555">■ <span style="color:#5b21b6">estudou</span></span>
-    <span style="font-size:11px;color:#555">■ <span style="color:#a78bfa">hoje</span></span>
-    <span style="font-size:11px;color:#555">■ <span style="color:#1a1828">sem estudo</span></span>
   </div>
 </div>
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:16px">Vocabulário</div>
-  ${[
-    {l:"Total estudado",v:totalReviewed,c:"#a78bfa"},
-    {l:"Dominadas",v:learned,c:"#6ee7b7"},
-    {l:"Para revisar",v:totalReviewed-learned,c:"#fcd34d"},
-    {l:"Palavras minhas",v:(S.userVocab||[]).length,c:"#60a5fa"},
-  ].map(s=>`<div class="perf-bar"><div class="perf-label">${s.l}</div><div class="progress-wrap" style="flex:1;background:#0c0c18"><div style="height:100%;border-radius:99px;background:${s.c};width:${totalReviewed>0?Math.round((s.v/Math.max(totalReviewed,1))*100):0}%;transition:width .5s"></div></div><div class="perf-pct" style="color:${s.c};width:40px">${s.v}</div></div>`).join("")}
+  ${[{l:"Cards no baralho",v:totalCards,c:"#a78bfa"},{l:"Dominadas",v:learned,c:"#6ee7b7"},{l:"Em revisão",v:totalCards-learned,c:"#fcd34d"}].map(s=>`<div class="perf-bar"><div class="perf-label">${s.l}</div><div class="progress-wrap" style="flex:1;background:#0c0c18"><div style="height:100%;border-radius:99px;background:${s.c};width:${totalCards>0?Math.round((s.v/Math.max(totalCards,1))*100):0}%;transition:width .5s"></div></div><div class="perf-pct" style="color:${s.c};width:40px">${s.v}</div></div>`).join("")}
 </div>
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:16px">Performance por módulo</div>
-  ${[
-    {k:"listening",l:"Listening",c:"#8b5cf6"},
-    {k:"speaking",l:"Speaking",c:"#f59e0b"},
-    {k:"reading",l:"Reading",c:"#10b981"},
-    {k:"vocabulary",l:"Vocabulary",c:"#3b82f6"},
-  ].map(s=>`<div class="perf-bar"><div class="perf-label">${s.l}</div><div class="progress-wrap" style="flex:1;background:#0c0c18"><div style="height:100%;border-radius:99px;background:${s.c};width:${S.scores[s.k]}%;transition:width .5s"></div></div><div class="perf-pct">${S.scores[s.k]}%</div></div>`).join("")}
-</div>
-<div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:16px">Histórico recente</div>
-  ${last30.filter(d=>d.modules>0).slice(-7).reverse().map(d=>{
-    const dots=Array.from({length:d.modules}).map(()=>'<span style="width:8px;height:8px;border-radius:50%;background:#5b21b6;display:inline-block"></span>').join("");
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0c0c18;border-radius:8px;margin-bottom:6px;border:1px solid #1a1828"><span style="font-size:12px;color:#888">'+d.weekday+' '+d.day+'/'+d.month+'</span><div style="display:flex;gap:6px">'+dots+'</div><span style="font-size:12px;color:#a78bfa">'+d.modules+' módulo'+(d.modules>1?'s':'')+'</span></div>';
-  }).join("")}
-  ${last30.filter(d=>d.modules>0).length===0?'<p style="font-size:13px;color:#555;text-align:center;padding:16px">Nenhum dia estudado ainda. Comece hoje! 🚀</p>':""}
+  ${[{k:"listening",l:"Listening",c:"#8b5cf6"},{k:"speaking",l:"Speaking",c:"#f59e0b"},{k:"reading",l:"Reading",c:"#10b981"},{k:"vocabulary",l:"Vocabulary",c:"#3b82f6"}].map(s=>`<div class="perf-bar"><div class="perf-label">${s.l}</div><div class="progress-wrap" style="flex:1;background:#0c0c18"><div style="height:100%;border-radius:99px;background:${s.c};width:${S.scores[s.k]}%;transition:width .5s"></div></div><div class="perf-pct">${S.scores[s.k]}%</div></div>`).join("")}
 </div>`;
 }
+
+// ══════════════════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════════════════
 function renderSettings(){
   const totalMin=Object.values(S.missionTimes).reduce((a,b)=>a+b,0);
   const goalLabel=S.goalMonths===0?"No meu ritmo":S.goalMonths===1?"1 mês":S.goalMonths+" meses";
   return `
 <div class="page-title">⚙ Configurações</div>
 <div class="page-sub">Personalize sua experiência de aprendizado.</div>
-
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:14px">👤 Seu perfil</div>
   <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
@@ -1982,58 +1670,35 @@ function renderSettings(){
   </div>
   <div style="font-size:12px;color:#6b7280">Nível atual: <span style="color:#a78bfa;font-weight:600">${S.level}</span> · XP total: <span style="color:#a78bfa;font-weight:600">${S.xp}</span> · Streak: <span style="color:#fcd34d;font-weight:600">${S.streak}🔥</span></div>
 </div>
-
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:14px">⏱ Tempo de estudo diário</div>
   <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Total atual: <span style="color:#a78bfa;font-weight:600">${totalMin} minutos/dia</span></div>
   <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
-    ${TIME_OPTIONS.map((o,i)=>`<button class="goal-btn${totalMin===o.total&&!S.missionTimeCustom?" sel":""}" onclick="S.missionTimes=${JSON.stringify(o.l)};S.missionTimeCustom='';const ti=document.getElementById('totalTimeInput');if(ti)ti.value='';saveState();render()">${o.total} minutos por dia</button>`).join("")}
+    ${TIME_OPTIONS.map((o,i)=>`<button class="goal-btn${totalMin===o.total&&!S.missionTimeCustom?" sel":""}" onclick="S.missionTimes=${JSON.stringify(o.l)};S.missionTimeCustom='';saveState();render()">${o.total} minutos por dia</button>`).join("")}
   </div>
   <div style="display:flex;gap:8px;align-items:center">
-    <input class="inp-number" id="totalTimeInput" type="number" min="15" max="300" placeholder="Outro..." value="${esc(S.missionTimeCustom)}" oninput="S.missionTimeCustom=this.value"/>
+    <input class="inp-number" id="totalTimeInput" type="number" min="15" max="300" placeholder="Outro..." value="${esc(S.missionTimeCustom)}"/>
     <span style="font-size:12px;color:#6b7280">minutos</span>
     <button class="btn btn-secondary" onclick="applyCustomTime()">Aplicar</button>
   </div>
-  <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
-    ${[{k:"listening",l:"Listening",c:"#8b5cf6"},{k:"reading",l:"Reading",c:"#10b981"},{k:"speaking",l:"Speaking",c:"#f59e0b"},{k:"vocabulary",l:"Vocabulary",c:"#3b82f6"}].map(m=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0c0c18;border-radius:8px;border:1px solid #1a1828">
-      <span style="font-size:12px;color:#888">${m.l}</span>
-      <span style="font-size:13px;font-weight:600;color:${m.c}">${S.missionTimes[m.k]} min</span>
-    </div>`).join("")}
-  </div>
 </div>
-
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:14px">🎯 Meta de fluência</div>
-  <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Meta atual: <span style="color:#a78bfa;font-weight:600">${goalLabel}</span> · Progresso: <span style="color:#a78bfa;font-weight:600">${globalPct()}%</span></div>
-  <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
-    ${[{v:2,l:"Resultado rápido (2 meses)"},{v:3,l:"Acelerado (3 meses)"},{v:6,l:"Sólido (6 meses)"},{v:12,l:"Fluência completa (12 meses)"},{v:0,l:"No meu ritmo"}].map(o=>`<button class="goal-btn${S.goalMonths===o.v?" sel":""}" onclick="S.goalMonths=${o.v};S.goalCustom='';saveState();render()">${o.l}</button>`).join("")}
+  <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Meta atual: <span style="color:#a78bfa;font-weight:600">${goalLabel}</span></div>
+  <div style="display:flex;flex-direction:column;gap:7px">
+    ${[{v:2,l:"Resultado rápido (2 meses)"},{v:3,l:"Acelerado (3 meses)"},{v:6,l:"Sólido (6 meses)"},{v:12,l:"Fluência completa (12 meses)"},{v:0,l:"No meu ritmo"}].map(o=>`<button class="goal-btn${S.goalMonths===o.v?" sel":""}" onclick="S.goalMonths=${o.v};saveState();render()">${o.l}</button>`).join("")}
   </div>
 </div>
-
-<div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:14px">🔔 Lembrete de estudo</div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <span style="font-size:13px;color:#888">Notificações diárias</span>
-    <span style="font-size:12px;color:${S.reminderEnabled?"#6ee7b7":"#555"};font-weight:600">${S.reminderEnabled?"✅ Ativo":"Desativado"}</span>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-    <span style="font-size:12px;color:#888">Horário:</span>
-    <input class="inp-number" type="number" min="0" max="23" value="${S.reminderHour}" oninput="S.reminderHour=parseInt(this.value)||20;saveState()" style="width:70px"/>
-    <span style="font-size:12px;color:#6b7280">horas</span>
-  </div>
-  <button class="btn btn-secondary" onclick="requestNotification()">${S.reminderEnabled?"🔔 Reativar lembrete":"🔔 Ativar lembrete"}</button>
-</div>
-
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:6px">⚠️ Zona de perigo</div>
-  <div style="font-size:12px;color:#6b7280;margin-bottom:14px">Ações irreversíveis. Cuidado!</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:14px">Ações irreversíveis.</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap">
     <button class="btn" style="background:#1a0a0a;color:#f87171;border:1px solid #450a0a;font-size:13px;padding:7px 14px" onclick="if(confirm('Resetar TODO o progresso? Isso não pode ser desfeito.')){localStorage.removeItem('fluentai_v4');location.reload();}">🗑 Resetar tudo</button>
     <button class="btn btn-secondary" onclick="showOnboarding()">↺ Refazer onboarding</button>
   </div>
 </div>`;
 }
+
 function applyCustomTime(){
   const inp=document.getElementById("totalTimeInput");
   const total=parseInt(inp?.value||60);
@@ -2042,18 +1707,21 @@ function applyCustomTime(){
   S.missionTimeCustom=String(total); saveState(); render();
 }
 function saveName(){ const inp=document.getElementById("nameInput"); if(inp&&inp.value.trim()){S.userName=inp.value.trim();saveState();render();} }
-function onLevelChange(lv){ S.level=lv; S.selListening=null; S.selReading=null; S.readIdx=0; S.readFeedback=null; S.readAnswers={}; S.vocabIdx=0; S.vocabFlipped=false; document.getElementById("levelSelect").value=lv; saveState(); render(); }
+function onLevelChange(lv){ S.level=lv; document.getElementById("levelSelect").value=lv; saveState(); render(); }
 
 function requestNotification(){
   if(!("Notification" in window)){ alert("Seu browser não suporta notificações."); return; }
   Notification.requestPermission().then(p=>{
     if(p==="granted"){
       S.reminderEnabled=true; saveState(); render();
-      new Notification("FluentAI 🎓",{body:"Lembrete de estudo ativado para as "+S.reminderHour+"h!",icon:""});
+      new Notification("FluentAI 🎓",{body:"Lembrete ativado para as "+S.reminderHour+"h!"});
     } else { alert("Permissão negada. Ative nas configurações do browser."); }
   });
 }
 
+// ══════════════════════════════════════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════════════════════════════════════
 function showOnboarding(){
   S.onboardStep=0; S.onboardAnswers={};
   document.getElementById("onboarding").style.display="flex";
@@ -2067,57 +1735,21 @@ function renderOnboarding(){
   const realStep=Math.max(0,S.onboardStep-1);
   const pct=q.type==="intro"?0:Math.round((realStep/realSteps)*100);
   const isLast=S.onboardStep===OB_QUESTIONS.length-1;
-
   let inner=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
     <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:#a78bfa">fluent<span style="color:#e2e0f0">ai</span></span>
     ${q.type==="intro"?'<span style="font-size:11px;color:#555;background:#14121e;padding:2px 8px;border-radius:99px">Bem-vindo!</span>':`<span style="font-size:12px;color:#555">${realStep+1} / ${realSteps}</span>`}
   </div>
   <div class="progress-wrap" style="margin-bottom:22px"><div class="progress-bar" style="width:${pct}%;transition:width .4s"></div></div>`;
-
   if(q.type==="intro"){
-    inner+=`
-    <div style="text-align:center;margin-bottom:22px">
-      <div style="font-size:42px;margin-bottom:12px">🎓</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#e2e0f0;margin-bottom:8px;line-height:1.3">Aprenda inglês de verdade<br>com IA adaptativa</div>
-      <div style="font-size:13px;color:#888;line-height:1.7;max-width:340px;margin:0 auto">O FluentAI usa inteligência artificial para criar conteúdo personalizado de Listening, Speaking, Reading e Vocabulário — todo dia, no seu nível.</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
-      ${[
-        {icon:"◎",c:"#8b5cf6",t:"Listening",d:"Textos reais com perguntas de compreensão"},
-        {icon:"◈",c:"#f59e0b",t:"Speaking",d:"Feedback da IA na sua produção oral"},
-        {icon:"≡",c:"#10b981",t:"Reading",d:"Leitura adaptada ao seu nível"},
-        {icon:"⊟",c:"#3b82f6",t:"Vocabulary",d:"Repetição espaçada com algoritmo SRS"},
-      ].map(m=>`<div style="background:#0c0c18;border:1px solid #1a1828;border-radius:10px;padding:12px">
-        <div style="font-size:18px;color:${m.c};margin-bottom:6px">${m.icon} <span style="font-size:13px;font-weight:600;color:#e2e0f0">${m.t}</span></div>
-        <div style="font-size:11px;color:#6b7280;line-height:1.5">${m.d}</div>
-      </div>`).join("")}
-    </div>
-    <div style="background:#0f0a1e;border:1px solid #3d1d6b;border-radius:10px;padding:12px;text-align:center;margin-bottom:20px">
-      <div style="font-size:12px;color:#a78bfa;font-weight:600">💡 Leva só 15–20 minutos por dia</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:3px">Missão diária gamificada com streak, XP e progressão de nível</div>
-    </div>`;
+    inner+=`<div style="text-align:center;margin-bottom:22px"><div style="font-size:42px;margin-bottom:12px">🎓</div><div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#e2e0f0;margin-bottom:8px">Aprenda inglês de verdade<br>com IA adaptativa</div><div style="font-size:13px;color:#888;line-height:1.7;max-width:340px;margin:0 auto">O FluentAI usa IA para criar conteúdo personalizado de Listening, Speaking, Reading e Vocabulário — todo dia, no seu nível.</div></div>`;
   } else {
     inner+=`<div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:18px;line-height:1.4">${q.q}</div>`;
-    if(q.type==="name"){
-      inner+=`<input class="inp" id="obName" placeholder="${q.placeholder}" value="${esc(S.onboardAnswers.name||"")}" style="margin-bottom:16px" onkeydown="if(event.key==='Enter')obNext()"/>`;
-    } else if(q.type==="level"){
-      inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">${q.options.map(o=>`<button class="goal-btn${S.onboardAnswers.level===o?" sel":""}" onclick="S.onboardAnswers.level='${o}';renderOnboarding()">${o}</button>`).join("")}</div>`;
-    } else if(q.type==="goal"){
-      inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">${q.options.map(o=>`<button class="goal-btn${S.onboardAnswers.goalMonths===o.v&&!S.onboardAnswers.goalCustom?" sel":""}" onclick="S.onboardAnswers.goalMonths=${o.v};S.onboardAnswers.goalCustom='';const i=document.getElementById('obGoalCustom');if(i)i.value='';renderOnboarding()">${o.l}</button>`).join("")}</div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
-        <input class="inp-number" id="obGoalCustom" type="number" min="1" max="120" placeholder="Outro prazo..." value="${S.onboardAnswers.goalCustom||""}" oninput="S.onboardAnswers.goalCustom=this.value;if(this.value){S.onboardAnswers.goalMonths=parseInt(this.value)||12;}renderOnboarding()"/>
-        <span style="font-size:12px;color:#6b7280">meses</span>
-      </div>`;
-    } else if(q.type==="time"){
-      inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">${TIME_OPTIONS.map((o,i)=>`<button class="goal-btn${S.onboardAnswers.timeIdx===i&&!S.onboardAnswers.timeCustom?" sel":""}" onclick="S.onboardAnswers.timeIdx=${i};S.onboardAnswers.time=${o.total};S.onboardAnswers.timeCustom='';const inp=document.getElementById('obTimeCustom');if(inp)inp.value='';renderOnboarding()">${o.total} minutos por dia</button>`).join("")}</div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
-        <input class="inp-number" id="obTimeCustom" type="number" min="10" max="300" placeholder="Outro tempo..." value="${S.onboardAnswers.timeCustom||""}" oninput="S.onboardAnswers.timeCustom=this.value;if(this.value){S.onboardAnswers.time=parseInt(this.value)||60;S.onboardAnswers.timeIdx=-1;}renderOnboarding()"/>
-        <span style="font-size:12px;color:#6b7280">minutos por dia</span>
-      </div>`;
-    }
+    if(q.type==="name") inner+=`<input class="inp" id="obName" placeholder="${q.placeholder}" value="${esc(S.onboardAnswers.name||"")}" style="margin-bottom:16px" onkeydown="if(event.key==='Enter')obNext()"/>`;
+    else if(q.type==="level") inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">${q.options.map(o=>`<button class="goal-btn${S.onboardAnswers.level===o?" sel":""}" onclick="S.onboardAnswers.level='${o}';renderOnboarding()">${o}</button>`).join("")}</div>`;
+    else if(q.type==="goal") inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">${q.options.map(o=>`<button class="goal-btn${S.onboardAnswers.goalMonths===o.v?" sel":""}" onclick="S.onboardAnswers.goalMonths=${o.v};renderOnboarding()">${o.l}</button>`).join("")}</div>`;
+    else if(q.type==="time") inner+=`<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">${TIME_OPTIONS.map((o,i)=>`<button class="goal-btn${S.onboardAnswers.timeIdx===i?" sel":""}" onclick="S.onboardAnswers.timeIdx=${i};S.onboardAnswers.time=${o.total};renderOnboarding()">${o.total} minutos por dia</button>`).join("")}</div>`;
   }
-
-  const canNext=q.type==="intro"||q.type==="name"||(q.type==="level"&&S.onboardAnswers.level)||(q.type==="goal"&&(S.onboardAnswers.goalMonths!==undefined||S.onboardAnswers.goalCustom))||(q.type==="time"&&(S.onboardAnswers.time||S.onboardAnswers.timeCustom));
+  const canNext=q.type==="intro"||q.type==="name"||(q.type==="level"&&S.onboardAnswers.level)||(q.type==="goal"&&S.onboardAnswers.goalMonths!==undefined)||(q.type==="time"&&S.onboardAnswers.time);
   const btnLabel=q.type==="intro"?"Personalizar meu plano →":isLast?"Começar a aprender! 🚀":"Continuar →";
   inner+=`<button class="btn btn-primary" style="width:100%;justify-content:center" onclick="obNext()" ${!canNext?"disabled":""}>${btnLabel}</button>`;
   card.innerHTML=inner;
@@ -2131,15 +1763,8 @@ function obNext(){
   if(S.onboardStep>=OB_QUESTIONS.length){
     if(S.onboardAnswers.name) S.userName=S.onboardAnswers.name;
     if(S.onboardAnswers.level) S.level=S.onboardAnswers.level;
-    if(S.onboardAnswers.goalCustom) { S.goalMonths=parseInt(S.onboardAnswers.goalCustom)||12; S.goalCustom=S.onboardAnswers.goalCustom; }
-    else if(S.onboardAnswers.goalMonths!==undefined) S.goalMonths=S.onboardAnswers.goalMonths;
-    if(S.onboardAnswers.timeCustom){
-      const total=parseInt(S.onboardAnswers.timeCustom)||60;
-      S.missionTimes={listening:Math.round(total*.33),reading:Math.round(total*.25),speaking:Math.round(total*.25),vocabulary:Math.round(total*.17)};
-      S.missionTimeCustom=S.onboardAnswers.timeCustom;
-    } else if(S.onboardAnswers.timeIdx>=0&&S.onboardAnswers.timeIdx!==undefined){
-      S.missionTimes=TIME_OPTIONS[S.onboardAnswers.timeIdx].l;
-    }
+    if(S.onboardAnswers.goalMonths!==undefined) S.goalMonths=S.onboardAnswers.goalMonths;
+    if(S.onboardAnswers.timeIdx>=0&&S.onboardAnswers.timeIdx!==undefined) S.missionTimes=TIME_OPTIONS[S.onboardAnswers.timeIdx].l;
     S.totalDays=1; S.lastStudyDate=new Date().toDateString(); S.streak=1;
     saveState(); document.getElementById("onboarding").style.display="none"; render();
   } else renderOnboarding();
@@ -2149,7 +1774,7 @@ if(synth) synth.onvoiceschanged=()=>synth.getVoices();
 loadState();
 const isFirst=!S.userName&&S.totalDays===0;
 render();
-setInterval(checkDayReset, 60_000);
+setInterval(checkDayReset,60_000);
 requestAnimationFrame(()=>{ const el=document.getElementById("content"); if(el) el.classList.add("ready"); });
 if(isFirst) showOnboarding();
 if(["listening","speaking","reading","vocabulary"].includes(S.tab)) startTimer(S.tab);
