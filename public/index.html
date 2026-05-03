@@ -1589,25 +1589,12 @@ function renderReview(){
 // ══════════════════════════════════════════════════════════════════
 // AI COACH
 // ══════════════════════════════════════════════════════════════════
-function getQuickPrompts(){
-  return {
-    Beginner:["Correct this: I go to work by foot","What means 'actually'?","Give me a simple exercise","How do I say 'saudade' in English?"],
-    Basic:["Correct this: I did a travel yesterday","Explain: since vs for","Give me a speaking exercise","Difference between 'make' and 'do'?"],
-    "Pre-Intermediate":["Correct this: I am agree with you","Explain present perfect vs simple past","Give me a conditionals exercise","How to sound more natural?"],
-    Intermediate:["Correct this: Despite of the rain we went","Explain passive voice with examples","Give me a debate topic","How do phrasal verbs work?"],
-    "Upper-Intermediate":["Analyze my writing style","Give me an advanced idiom exercise","Let's discuss a complex topic","Nuances of 'although' vs 'however'"],
-    Advanced:["Let's have an academic discussion","Critique my argument structure","Explain a subtle grammar point","Give me a C1/C2 level exercise"],
-  }[S.level]||[];
-}
+// quick prompts removidos
 
 function renderAI(){
-  const prompts=getQuickPrompts();
   return `
 <div class="page-title">✦ AI Coach</div>
 <div class="page-sub">Seu tutor pessoal de inglês. Corrija frases, tire dúvidas ou converse.</div>
-<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
-  ${prompts.map(p=>`<button class="btn btn-secondary btn-sm" onclick="setAIInput('${p.replace(/'/g,"\\'")}'">${p.length>35?p.slice(0,35)+"…":p}</button>`).join("")}
-</div>
 <div class="chat-area" id="chatArea">
   ${S.aiHistory.length===0?`<div style="text-align:center;padding:36px 16px;color:#555;margin:auto"><div style="font-size:30px;margin-bottom:10px">✦</div><div style="font-weight:600;color:#777;margin-bottom:6px">AI Coach — nível ${S.level}</div><div style="font-size:12px">Envie uma frase para correção, peça exercícios ou inicie uma conversa.</div></div>`
   :S.aiHistory.map(m=>`<div style="display:flex;justify-content:${m.role==="user"?"flex-end":"flex-start"}"><div class="bubble ${m.role==="user"?"bubble-user":"bubble-ai"}">${esc(m.content)}${m.role==="assistant"?`<button class="bubble-speak-btn" onclick="speak('${(m.content||"").replace(/'/g,"\\'").replace(/\n/g," ").substring(0,300)}')" title="Ouvir">🔊</button>`:""}</div></div>`).join("")}
