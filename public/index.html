@@ -1653,7 +1653,7 @@ function renderEvolucao(){
 <div class="page-title">📈 Minha Evolução</div>
 <div class="page-sub">Acompanhe seu progresso real ao longo do tempo.</div>
 <div class="stats-grid">
-  ${[{v:daysStudied,l:"Dias estudados",s:"últimos 30 dias"},{v:S.streak+"d",l:"Streak atual",s:"dias seguidos"},{v:bestStreak+"d",l:"Melhor streak",s:"últimos 30 dias"},{v:avgModules,l:"Módulos/dia",s:"média dos dias ativos"}].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
+  ${[{v:daysStudied,l:"Dias estudados",s:"últimos 30 dias"},{v:S.streak,l:"Streak atual",s:"dias seguidos"},{v:bestStreak,l:"Melhor streak",s:"últimos 30 dias"},{v:avgModules,l:"Módulos/dia",s:"média dos dias ativos"}].map(s=>`<div class="stat-card"><div class="stat-val">${s.v}</div><div class="stat-label">${s.l}</div><div class="stat-sub">${s.s}</div></div>`).join("")}
 </div>
 <div class="card">
   <div style="font-size:14px;font-weight:600;margin-bottom:16px">Atividade nos últimos 30 dias</div>
