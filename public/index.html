@@ -1391,10 +1391,10 @@ function renderAddByWord(){
   <div style="display:flex;gap:9px;margin-bottom:14px">
     <input class="inp" id="wordInp" placeholder="ex: opportunity, break even, look forward to..."
       value="${esc(S.wordInput)}"
-      oninput="S.wordInput=this.value"
+      oninput="S.wordInput=this.value;const _b=document.getElementById('wordGenBtn');if(_b)_b.disabled=!this.value.trim();"
       onkeydown="if(event.key==='Enter')generateWordCards()"
       style="flex:1"/>
-    <button class="btn btn-primary" onclick="generateWordCards()" ${S.wordLoading||!S.wordInput.trim()?"disabled":""}>
+    <button id="wordGenBtn" class="btn btn-primary" onclick="generateWordCards()" ${S.wordLoading||!S.wordInput.trim()?"disabled":""}>
       ${S.wordLoading?"⏳ Gerando...":"Gerar 5 frases"}
     </button>
   </div>
@@ -1464,10 +1464,10 @@ function renderAddManual(){
   <div style="font-size:14px;font-weight:600;margin-bottom:6px">Adicionar card manualmente</div>
   <div style="font-size:12px;color:#6b7280;margin-bottom:16px">Escreva a frase em inglês e a tradução.</div>
   <label style="font-size:12px;color:#888;display:block;margin-bottom:5px">Frente (inglês)</label>
-  <textarea class="inp" rows="2" placeholder="ex: I look forward to working with you." style="margin-bottom:12px;resize:none" oninput="S.manualFront=this.value">${esc(S.manualFront||"")}</textarea>
+  <textarea class="inp" rows="2" placeholder="ex: I look forward to working with you." style="margin-bottom:12px;resize:none" oninput="S.manualFront=this.value;const _b=document.getElementById('manualAddBtn');if(_b)_b.disabled=!this.value.trim()||!S.manualBack.trim();">${esc(S.manualFront||"")}</textarea>
   <label style="font-size:12px;color:#888;display:block;margin-bottom:5px">Verso (português)</label>
-  <textarea class="inp" rows="2" placeholder="ex: Estou animado para trabalhar com você." style="margin-bottom:16px;resize:none" oninput="S.manualBack=this.value">${esc(S.manualBack||"")}</textarea>
-  <button class="btn btn-success" onclick="addManualCard()" ${!S.manualFront||!S.manualBack?"disabled":""}>+ Adicionar ao baralho</button>
+  <textarea class="inp" rows="2" placeholder="ex: Estou animado para trabalhar com você." style="margin-bottom:16px;resize:none" oninput="S.manualBack=this.value;const _b=document.getElementById('manualAddBtn');if(_b)_b.disabled=!this.value.trim()||!S.manualFront.trim();">${esc(S.manualBack||"")}</textarea>
+  <button id="manualAddBtn" class="btn btn-success" onclick="addManualCard()" ${!S.manualFront||!S.manualBack?"disabled":""}>+ Adicionar ao baralho</button>
 </div>`;
 }
 
