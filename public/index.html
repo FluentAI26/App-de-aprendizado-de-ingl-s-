@@ -848,8 +848,10 @@ ${S.lessonStep===2?`
   <div style="font-size:14px;font-weight:600;margin-bottom:12px">◈ Speaking — produza frases sobre o tema</div>
   <div style="font-size:16px;font-weight:700;font-family:'Space Grotesk',sans-serif;margin-bottom:14px;color:#e2e0f0">"${S.lessonData.speakPrompt}"</div>
   <textarea class="inp" id="lessonSpeakArea" rows="4" placeholder="Escreva ou fale sua resposta em inglês...">${esc(S.lessonSpeakInput||"")}</textarea>
-  <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap;align-items:center">
+  <div id="lessonMicStatus" style="font-size:12px;color:#a78bfa;margin-top:6px;min-height:18px"></div>
+  <div style="display:flex;gap:9px;margin-top:8px;flex-wrap:wrap;align-items:center">
     <button class="btn btn-success" onclick="submitLessonSpeaking()">✓ Enviar e receber feedback</button>
+    ${(window.SpeechRecognition||window.webkitSpeechRecognition)?'<button class="voice-btn voice-idle" id="lessonMicBtn" onclick="toggleRec(\'lessonSpeakArea\',\'lessonMicStatus\',\'lessonMicBtn\')" title="Falar em voz alta">🎤</button>':''}
     <button class="btn btn-secondary btn-sm" onclick="speak('${(S.lessonData.speakPrompt||"").replace(/'/g,"\\'")}')">🔊 Ouvir prompt</button>
   </div>
   ${S.lessonData.speakFeedback?`<div style="margin-top:14px"><div style="color:#6ee7b7;font-weight:700;margin-bottom:10px;font-size:13px">✓ Feedback do AI Coach:</div>${renderSpeakFeedback(S.lessonData.speakFeedback)}<button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="S.lessonTopic='';S.lessonData=null;S.lessonStep=0;completeTask('listening');completeTask('vocabulary');completeTask('speaking');render()">🎉 Concluir lição!</button></div>`:""}
