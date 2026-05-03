@@ -600,7 +600,31 @@ function P_LISTENING_GENERATE(topic,level){
 // ── NOVOS PROMPTS VOCABULARY ──────────────────────────────────────
 
 function P_VOCAB_WORD_CARDS(word,level){
-  return `You are an EFL teacher creating flashcards for a ${level} English learner.\n\nThe student typed the word/phrase: "${word}"\n\nGenerate exactly 5 flashcard sentences using "${word}" in different real-life contexts.\nVocabulary rule: ${LV_VOCAB[level]}\n\nFor each card:\n- "front": a natural English sentence using "${word}"\n- "back": the natural Brazilian Portuguese translation of that sentence\n- "highlight": "${word}"\n\nRules:\n- Each sentence must show a DIFFERENT context or meaning\n- Sentences must be natural, not textbook-stiff\n- NO meta-commentary — ONLY the JSON\n\nReturn ONLY a valid JSON array of 5 objects:\n[{"front":"...","back":"...","highlight":"${word}"},...]`;
+  return `You are an EFL teacher creating flashcards for a ${level} English learner.
+
+STEP 1 — TRANSLATE IF NEEDED:
+The student typed: "${word}"
+If this word/phrase is in Portuguese or any language other than English, translate it to English first.
+Examples: "futebol" → "soccer", "médico" → "doctor", "correr" → "to run"
+Use the English translation as the target word for all sentences.
+
+STEP 2 — GENERATE 5 SENTENCES:
+Generate exactly 5 flashcard sentences using the English word in different real-life contexts.
+Vocabulary rule: ${LV_VOCAB[level]}
+
+For each card:
+- "front": a natural English sentence using the English word (NEVER use the Portuguese original)
+- "back": the natural Brazilian Portuguese translation of that sentence
+- "highlight": the English word/phrase used (never the Portuguese original)
+
+Rules:
+- Each sentence must show a DIFFERENT context or meaning
+- Sentences must be natural and practical
+- ALL "front" sentences must be 100% in English
+- NO meta-commentary — ONLY the JSON
+
+Return ONLY a valid JSON array of 5 objects:
+[{"front":"...","back":"...","highlight":"..."},...]`;
 }
 
 function P_VOCAB_THEME_CARDS(theme,level){
@@ -1257,7 +1281,7 @@ function deleteCard(id){
 }
 
 async function generateWordCards(){
-  const word=(S.wordInput||"").trim();
+  const word=translateTopic((S.wordInput||"").trim());
   if(!word||S.wordLoading) return;
   S.wordLoading=true; S.wordCards=[]; render();
   try{
@@ -1491,10 +1515,22 @@ function renderStudySession(){
   const pct=Math.round((S.studyIdx/Math.max(total,1))*100);
   const previewInterval=(quality)=>{
     const p=card.srs||{ease:2.5,interval:1,reps:0};
+    const ease=p.ease||2.5, interval=p.interval||1, reps=p.reps||0;
+    // Difícil sempre reinicia
     if(quality<3) return "amanhã";
-    if(p.reps===0) return "1 dia";
-    if(p.reps===1) return "6 dias";
-    const iv=Math.round((p.interval||1)*(p.ease||2.5));
+    // Cards novos: mostrar intervalos distintos (como Anki learning steps)
+    if(reps===0){
+      if(quality>=5) return "4 dias";   // Fácil
+      return "1 dia";                    // Médio
+    }
+    if(reps===1){
+      if(quality>=5) return "6 dias";
+      return "3 dias";
+    }
+    // Cards em revisão: calcular pelo ease
+    let e=ease+(0.1-(5-quality)*(0.08+(5-quality)*0.02));
+    if(e<1.3) e=1.3;
+    const iv=Math.round(interval*e);
     return iv<=1?"amanhã":iv+"d";
   };
   return `
