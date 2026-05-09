@@ -647,7 +647,9 @@ const TABS=[
 
 function showTab(id){
   stopTimer();
-  if(id==="speaking"){ S.speakFeedback=null; S.speakInput=""; }
+  if(id==="speaking"){ S.speakFeedback=null; S.speakInput=""; S.speakTopicCustom=""; S.speakTopic=""; S.speakGenPrompts=[]; }
+  if(id==="listening"){ S.lisTopicCustom=""; S.lisTopic=""; S.genListening=null; S.genListeningText=""; S.genListeningQs=[]; S.lisAnswers={}; S.lisFeedback=null; }
+  if(id==="reading"){ S.readTopicCustom=""; S.readTopic=""; S.genReading=null; S.genReadingQs=[]; S.genReadingAnswers={}; S.genReadingFeedback=null; }
   S.tab=id; render();
   if(["listening","speaking","reading","vocabulary"].includes(id)) startTimer(id);
 }
@@ -689,13 +691,20 @@ function timerWidget(tabKey){
 function topicSelector(selKey,customKey,placeholder,genBtnId){
   const active=getActiveTopic(selKey,customKey);
   return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-    ${TOPICS.map(t=>`<button class="topic-btn${S[selKey]===t&&!S[customKey].trim()?" sel":""}" onclick="S['${selKey}']='${t}';S['${customKey}']='';const inp=document.getElementById('inp_${customKey}');if(inp)inp.value='';render()">${t}</button>`).join("")}
+    ${TOPICS.map(t=>`<button class="topic-btn${S[selKey]===t&&!S[customKey].trim()?" sel":""}" onclick="S['${selKey}']='${t}';S['${customKey}']='';const inp=document.getElementById('inp_${customKey}');if(inp)inp.value='';const lbl=document.getElementById('lbl_${customKey}');if(lbl)lbl.innerHTML='Tema: <strong>${t}</strong>';const btn=document.getElementById('${genBtnId||""}');if(btn)btn.disabled=false;render()">${t}</button>`).join("")}
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
     <input class="inp" id="inp_${customKey}" style="flex:1" placeholder="${placeholder}" value="${esc(S[customKey])}"
-      oninput="S['${customKey}']=this.value;if(this.value.trim()) S['${selKey}']='';"/>
+      oninput="
+        S['${customKey}']=this.value;
+        if(this.value.trim()) S['${selKey}']='';
+        const _lbl=document.getElementById('lbl_${customKey}');
+        if(_lbl) _lbl.innerHTML=this.value.trim()?'Tema: <strong>'+this.value.trim()+'</strong>':'';
+        const _btn=document.getElementById('${genBtnId||""}');
+        if(_btn) _btn.disabled=!this.value.trim()&&!S['${selKey}'];
+      "/>
   </div>
-  <div style="font-size:12px;color:#a78bfa;margin-bottom:8px">${active?`Tema: <strong>${active}</strong>`:""}</div>`;
+  <div id="lbl_${customKey}" style="font-size:12px;color:#a78bfa;margin-bottom:8px">${active?`Tema: <strong>${active}</strong>`:""}</div>`;
 }
 
 // ══════════════════════════════════════════════════════════════════
