@@ -691,7 +691,7 @@ function timerWidget(tabKey){
 function topicSelector(selKey,customKey,placeholder,genBtnId){
   const active=getActiveTopic(selKey,customKey);
   return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-    ${TOPICS.map(t=>`<button class="topic-btn${S[selKey]===t&&!S[customKey].trim()?" sel":""}" onclick="S['${selKey}']='${t}';S['${customKey}']='';const inp=document.getElementById('inp_${customKey}');if(inp)inp.value='';const lbl=document.getElementById('lbl_${customKey}');if(lbl)lbl.innerHTML='Tema: <strong>${t}</strong>';const btn=document.getElementById('${genBtnId||""}');if(btn)btn.disabled=false;render()">${t}</button>`).join("")}
+    ${TOPICS.map(t=>`<button class="topic-btn${S[selKey]===t&&!S[customKey].trim()?" sel":""}" onclick="S['${selKey}']='${t}';S['${customKey}']='';const inp=document.getElementById('inp_${customKey}');if(inp)inp.value='';const lbl=document.getElementById('lbl_${customKey}');if(lbl)lbl.innerHTML='Tema: <strong>${t}</strong>';const btn=document.getElementById('${genBtnId||""}');if(btn)btn.disabled=false;const sp=document.getElementById('btnlabel_${genBtnId||""}');if(sp)sp.textContent='${t}';render()">${t}</button>`).join("")}
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
     <input class="inp" id="inp_${customKey}" style="flex:1" placeholder="${placeholder}" value="${esc(S[customKey])}"
@@ -701,7 +701,11 @@ function topicSelector(selKey,customKey,placeholder,genBtnId){
         const _lbl=document.getElementById('lbl_${customKey}');
         if(_lbl) _lbl.innerHTML=this.value.trim()?'Tema: <strong>'+this.value.trim()+'</strong>':'';
         const _btn=document.getElementById('${genBtnId||""}');
-        if(_btn) _btn.disabled=!this.value.trim()&&!S['${selKey}'];
+        if(_btn){
+          _btn.disabled=!this.value.trim()&&!S['${selKey}'];
+          const _sp=document.getElementById('btnlabel_${genBtnId||""}');
+          if(_sp&&this.value.trim()) _sp.textContent=this.value.trim();
+        }
       "/>
   </div>
   <div id="lbl_${customKey}" style="font-size:12px;color:#a78bfa;margin-bottom:8px">${active?`Tema: <strong>${active}</strong>`:""}</div>`;
@@ -911,7 +915,7 @@ function renderListening(){
   html+='<div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar conteúdo por tema com IA</div>';
   html+=topicSelector("lisTopic","lisTopicCustom","Ou digite qualquer tema... ex: viagem de férias, entrevista de emprego","lisGenBtn");
   html+='<div style="display:flex;gap:9px;flex-wrap:wrap">';
-  html+='<button id="lisGenBtn" class="btn btn-primary" onclick="generateListening()" '+(S.genLoading||!topic?'disabled':'')+'>'+(S.genLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(topic||"..."))+'</button>';
+  html+='<button id="lisGenBtn" class="btn btn-primary" onclick="generateListening()" '+(S.genLoading||!topic?'disabled':'')+'>'+(S.genLoading?'⏳ Gerando...':'▶ Gerar texto sobre <span id="btnlabel_lisGenBtn">'+(topic||'...')+'</span>')+'</button>';
   if(topic) html+='<button class="btn btn-secondary" onclick="S.lisTopic=\'\';S.lisTopicCustom=\'\';S.genListening=null;S.genListeningText=\'\';S.genListeningQs=[];S.lisAnswers={};S.lisFeedback=null;render()">✕ Limpar</button>';
   html+='</div>';
   if(S.genListening){
@@ -992,7 +996,7 @@ ${timerWidget("speaking")}
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar prompts por tema</div>
   ${topicSelector("speakTopic","speakTopicCustom","Ou digite seu tema...","speakGenBtn")}
   <button id="speakGenBtn" class="btn btn-primary btn-sm" onclick="generateSpeakPrompts()" ${S.speakGenLoading||!getActiveTopic("speakTopic","speakTopicCustom")?"disabled":""}>
-    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompt sobre "+(getActiveTopic("speakTopic","speakTopicCustom")||"...")}
+    ${S.speakGenLoading?"⏳ Gerando...":"✦ Gerar prompt sobre <span id='btnlabel_speakGenBtn'>"+(getActiveTopic("speakTopic","speakTopicCustom")||"...")+"</span>"}
   </button>
 </div>
 <div class="card" style="border-color:#3d1d6b">
@@ -1151,7 +1155,7 @@ ${timerWidget("reading")}
 <div class="card" style="margin-bottom:14px">
   <div style="font-size:14px;font-weight:600;margin-bottom:10px">✦ Gerar texto por tema com IA</div>
   ${topicSelector("readTopic","readTopicCustom","Ou digite qualquer tema...","readGenBtn")}
-  <button id="readGenBtn" class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre "+(topic||"...")}</button>
+  <button id="readGenBtn" class="btn btn-primary btn-sm" onclick="generateReading()" ${S.genReadingLoading||!topic?"disabled":""}>${S.genReadingLoading?"⏳ Gerando...":"▶ Gerar texto sobre <span id='btnlabel_readGenBtn'>"+(topic||"...")+"</span>"}</button>
   ${topic?`<button class="btn btn-secondary btn-sm" onclick="S.readTopic='';S.readTopicCustom='';S.genReading=null;S.genReadingQs=[];S.genReadingAnswers={};S.genReadingFeedback=null;render()" style="margin-left:8px">✕ Limpar</button>`:""}
   ${S.genReading?`
   <div style="margin-top:14px">
